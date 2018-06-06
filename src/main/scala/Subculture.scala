@@ -1,4 +1,4 @@
-sealed trait Subculture {
+sealed trait Subculture extends Serializable with Product {
   val preferences: Map[TransportMode, Float]
 }
 
