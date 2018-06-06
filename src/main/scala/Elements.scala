@@ -20,37 +20,26 @@ val connectednessToNeighbourhood = 0.4
 val connectednessToSubculture = 0.6
 val connectednessToNetwork = 0.8
 
-sealed trait JourneyType
-case object LocalCommute extends JourneyType
-case object CityCommute extends JourneyType
-case object DistantCommute extends JourneyType
-
-sealed trait TransportMode
-case object Car extends TransportMode
-case object PublicTransport extends TransportMode
-case object Cycle extends TransportMode
-case object Walk extends TransportMode
-
 // Perceived effort
 val activeness = Map (Car -> 0.0, PublicTransport -> 0.2, Cycle -> 1.0, Walk -> 0.9)
 
 case class Neighbourhood (name: String)
 case class Person (journeyType: JourneyType)
-case class Subculture (name: String)
+//case class Subculture (name: String)
 
 case class Borough (residents: Vector[Person],
                     neighbourhoods: Map[Person, Neighbourhood],
                     subcultures: Map[Person, Subculture],
                     networks: Map[Person, Vector[Person]])
 
-val subcultureA = Subculture ("CultureA")
-val subcultureB = Subculture ("CultureB")
-val subcultureC = Subculture ("CultureC")
-val subcultures = Vector (subcultureA, subcultureB, subcultureC)
-val culturalPreferences = Map (
-  subcultureA -> Map (Car -> 0.9, PublicTransport -> 0.1, Cycle -> 0.0, Walk -> 0.0),
-  subcultureB -> Map (Car -> 0.0, PublicTransport -> 0.2, Cycle -> 1.0, Walk -> 0.9),
-  subcultureC -> Map (Car -> 0.0, PublicTransport -> 0.2, Cycle -> 1.0, Walk -> 0.9))
+//val subcultureA = Subculture ("CultureA")
+//val subcultureB = Subculture ("CultureB")
+//val subcultureC = Subculture ("CultureC")
+//val subcultures = Vector (subcultureA, subcultureB, subcultureC)
+//val culturalPreferences = Map (
+//  subcultureA -> Map (Car -> 0.9, PublicTransport -> 0.1, Cycle -> 0.0, Walk -> 0.0),
+//  subcultureB -> Map (Car -> 0.0, PublicTransport -> 0.2, Cycle -> 1.0, Walk -> 0.9),
+//  subcultureC -> Map (Car -> 0.0, PublicTransport -> 0.2, Cycle -> 1.0, Walk -> 0.9))
 
 /*
 Time: The time scale modelled is 1 to 5 years, initially considering weekdays only (so about 260 days per year). Each day, there will be a type of weather from a set, derived from the current season.
