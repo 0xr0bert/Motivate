@@ -1,3 +1,8 @@
+/*
+ Could psychological variables use a random value from a normal distribution mean = 1, s.d. = 0.25,
+ then this value could be multiplied by the global importance, to generate the specific importance to the agent.git s
+ */
+
 /***
   * An Agent for the model
   *
@@ -15,7 +20,7 @@
   *                                  > 1 = Up weighting of importance.
   *                                  0 = No importance/ ignore factor.
   * @param distance The JourneyType that signifies the commute distance
-  * @param currentMode How the agent is currently going to wok
+  * @param currentMode How the agent is currently going to work
   * @param habit Commuting mode last used
   * @param norm Preferences for a particular commuting mode
   * @param adherence How important is an agent’s subculture in directing their norm?
@@ -48,7 +53,7 @@ class Agent(
            val defiance: Float,
            val weatherSensitivity: Float
            ) {
-  var socialNetwork: Vector[Agent] = Vector[Agent]()
-  var socialConnectivity: Float = 0.0f
-  var socialSuggestibility: Float = 0.0f
+  var socialNetwork: Vector[Agent] = _
+  var socialConnectivity: Float = _
+  var socialSuggestibility: Float = _
 }
