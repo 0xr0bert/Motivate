@@ -1,4 +1,5 @@
-import scalaz.Scalaz._
+import scalaz._
+import Scalaz._
 /*
  Could psychological variables use a random value from a normal distribution mean = 1, s.d. = 0.25,
  then this value could be multiplied by the global importance, to generate the specific importance to the agent
@@ -75,11 +76,11 @@ class Agent(
     val neighbourhoodWeight = neighbourhoodConnectivity * neighbourSuggestiblility
     val social = countInSubgroup(socialNetwork, socialWeight)
     val subcultureVals = subculture.preferences.map { case(k, v) => (k, v * subcultureWeight) }
-    val normVal: Map[TransportMode, Double] = Map (norm -> 1.0 * autonomy)
-    val habitVal: Map[TransportMode, Double] = Map (habit -> 1.0 * consistency)
-    val valuesToMultiply: List[Map[TransportMode, Double]] = List(social, subcultureVals, normVal, habitVal)
-    // Multiplies all the values, and chooses the maximum one
-    norm = valuesToMultiply.reduce(_.intersectWith(_)(_ * _)).maxBy(_._2)._1
+    val normVal: Map[TransportMode, Double] = Map (norm -> autonomy)
+    val habitVal: Map[TransportMode, Double] = Map (habit -> consistency)
+    val valuesToAdd: List[Map[TransportMode, Double]] = List(social, subcultureVals, normVal, habitVal)
+    // Adds adds all the values and selects the maximum
+    norm = valuesToAdd.reduce(_.intersectWith(_)(_ + _)).maxBy(_._2)._1
   }
 
   private def countInSubgroup(v: Set[Agent], weight: Float): Map[TransportMode, Double] = {
@@ -88,26 +89,33 @@ class Agent(
 
   def chooseMode2(weather: Weather, changeInWeather: Boolean): Unit = {
     /*
+     * weather = 1 - sensitivityToWeather ?
      * capacity = activeness * feasibility
      * cost = capacity * supportiveness * weather
-     * decision = (laziness * cost) * (autonomy * norm) * (consistency * habit)
+     * decision = (laziness * cost) + (autonomy * norm) + (consistency * habit)
      *
      * TODO: This needs to be checked for correctness
+     * TODO: Clarify this function
      */
     habit = currentMode
 
     val feasibility = subculture.feasibility(distance)
     val capacity: Map[TransportMode, Double] = feasibility.map { case (k, v) => (k, v.toDouble * k.effort)}
     // TODO: How does weather fit in to here
-    val cost: Map[TransportMode, Double] = capacity.intersectWith(neighbourhood.supportiveness)(_ * _)
+    val weatherModifier: Map[TransportMode, Double] = Map (
+      Cycle -> 1.0 - weatherSensitivity,
+      Walk -> 1.0 - weatherSensitivity
+    )
+    val cost: Map[TransportMode, Double] = if (weather == Good) capacity.intersectWith(neighbourhood.supportiveness)(_ * _)
+    else capacity.intersectWith(neighbourhood.supportiveness)(_ * _).intersectWith(weatherModifier)(_ * _)
 
-    val normVal: Map[TransportMode, Double] = Map (norm -> 1.0 * autonomy)
-    val habitVal: Map[TransportMode, Double] = Map (habit -> 1.0 * consistency)
+    val normVal: Map[TransportMode, Double] = Map (norm -> autonomy)
+    val habitVal: Map[TransportMode, Double] = Map (habit -> consistency)
     val lazyCost: Map[TransportMode, Double] = cost.map { case (k, v) => (k, v * laziness)}
 
     val valuesToMultiply: List[Map[TransportMode, Double]] = List(lazyCost, normVal, habitVal)
     // TODO: Should this be max or min
-    currentMode = valuesToMultiply.reduce(_.intersectWith(_)(_ * _)).maxBy(_._2)._1
+    currentMode = valuesToMultiply.reduce(_.intersectWith(_)(_ + _)).maxBy(_._2)._1
   }
 
   /*
