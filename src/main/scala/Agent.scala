@@ -1,3 +1,4 @@
+import scalaz.Scalaz._
 /*
  Could psychological variables use a random value from a normal distribution mean = 1, s.d. = 0.25,
  then this value could be multiplied by the global importance, to generate the specific importance to the agent
@@ -5,6 +6,8 @@
  Should psychological factors be between 0-2?
 
  Should car / bike ownership be stored in agent?
+
+ TODO: What parameters are needed, and how do they impact the functions of Agent
  */
 
 /***
@@ -57,7 +60,7 @@ class Agent(
            val defiance: Float,
            val weatherSensitivity: Float
            ) {
-  var socialNetwork: Vector[Agent] = _
+  var socialNetwork: Set[Agent] = _
   var socialConnectivity: Float = _
   var socialSuggestibility: Float = _
 
@@ -73,13 +76,12 @@ class Agent(
     val subcultureVals = subculture.preferences.map { case(k, v) => (k, v * subcultureWeight) }
     val normVal: Map[TransportMode, Double] = Map (norm -> 1.0 * autonomy)
     val habitVal: Map[TransportMode, Double] = Map (habit -> 1.0 * consistency)
-    var newNorm = social.map { case(k, v) => (k,
-      v * subcultureVals.getOrElse(k, 0.0) * normVal.getOrElse(k, 0.0) * habitVal.getOrElse(k, 0.0)) }
-
-    norm = newNorm.maxBy(_._2)._1
+    val valuesToMultiply: List[Map[TransportMode, Double]] = List(social, subcultureVals, normVal, habitVal)
+    // Multiplies all the values, and chooses the maximum one
+    norm = valuesToMultiply.reduce(_.intersectWith(_)(_ * _)).maxBy(_._2)._1
   }
 
-  private def countInSubgroup(v: Vector[Agent], weight: Float): Map[TransportMode, Double] = {
+  private def countInSubgroup(v: Set[Agent], weight: Float): Map[TransportMode, Double] = {
     v.groupBy(_.habit).mapValues(_.size.toDouble * weight / v.size)
   }
 

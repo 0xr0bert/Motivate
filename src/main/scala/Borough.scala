@@ -72,7 +72,7 @@ object Borough {
     * Generates the agents, allocating them to neighbourhoods, social networks, subcultures
     */
   def setUp(): Unit = {
-    for (i <- 1 to 150000) {
+    for (i <- 1 to numberOfPeople) {
       // TODO: Generate agents
     }
   }
