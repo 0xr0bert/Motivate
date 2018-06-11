@@ -1,6 +1,10 @@
 /*
  Could psychological variables use a random value from a normal distribution mean = 1, s.d. = 0.25,
  then this value could be multiplied by the global importance, to generate the specific importance to the agent
+
+ Should psychological factors be between 0-2?
+
+ Should car / bike ownership be stored in agent?
  */
 
 /***
@@ -77,5 +81,90 @@ class Agent(
 
   private def countInSubgroup(v: Vector[Agent], weight: Float): Map[TransportMode, Double] = {
     v.groupBy(_.habit).mapValues(_.size.toDouble * weight / v.size)
+  }
+
+  /*
+  Every agent has a variable sensitivity to bad weather, from being very hardy to very averse.
+  Each agent has a ‘weather_sensitivity’ variable drawn at agent initiation from a continuous uniform
+  distribution U(0,1). Currently, the effect of habit either strengthens or weakens the random value drawn to compare
+  against weather sensitivity by +/- 0.1. Effectively, cycling or walking in bad weather yesterday strengthens your
+  resolve to do it again, whereas switching to a non-active mode weakens your resolve to commute actively on the next
+  day of bad weather. Currently, any negative change to the weather sparks a new decision and hence intermittent periods
+  of bad weather are independent of one another.
+   */
+  def chooseMode(weather: Weather, changeInWeather: Boolean) : Unit = {
+    match weather {
+      case Good => currentMode = norm
+      case Bad => currentMode = choose(changeInWeather)
+    }
+
+    habit = currentMode
+  }
+
+  // TODO: Shouldn't the suggestibilities be used here?
+  /**
+    * Weather should be bad if this is called
+    * @param changeInWeather if the weather has changed (to be bad)
+    * @return the chosen TransportMode
+    */
+  private def choose(changeInWeather: Boolean) : TransportMode = {
+    if (!changeInWeather && (norm == Walk || norm == Cycle)) {
+      // Weather is consistently bad and active mode
+      val r = scala.util.Random
+      var randomValue = r.nextDouble()
+      // Strengthen or dampen based on habit
+      // TODO: Should these be the other way around?
+      if (habit == Walk || habit == Cycle) {
+        randomValue -= 0.1
+      } else {
+        randomValue += 0.1
+      }
+
+      if (weatherSensitivity > randomValue) {
+        // Ignore the bad weather
+        norm
+      } else if (habit == PublicTransport || habit == Car) {
+        habit
+      } else {
+        PublicTransport
+      }
+
+      /*
+      else if (!car) {
+        return PublicTransport
+      } else {
+        val randomInt = r.nextInt(2)
+        if (randomInt == 0) {
+          return PublicTransport
+        } else {
+          return Car
+        }
+      }
+       */
+    } else if (!changeInWeather) {
+      norm
+    } else if (changeInWeather && (norm == Walk || norm == Cycle)) {
+      val r = scala.util.Random
+      val randomValue = r.nextDouble()
+      if (weatherSensitivity > randomValue) {
+        norm
+      } else {
+        PublicTransport
+      }
+      /*
+      else if (!car) {
+        return PublicTransport
+      } else {
+        val randomInt = r.nextInt(2)
+        if (randomInt == 0) {
+          return PublicTransport
+        } else {
+          return Car
+        }
+      }
+       */
+    } else {
+      norm
+    }
   }
 }
