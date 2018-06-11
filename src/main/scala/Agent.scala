@@ -1,6 +1,6 @@
 /*
  Could psychological variables use a random value from a normal distribution mean = 1, s.d. = 0.25,
- then this value could be multiplied by the global importance, to generate the specific importance to the agent.git s
+ then this value could be multiplied by the global importance, to generate the specific importance to the agent
  */
 
 /***
@@ -56,4 +56,26 @@ class Agent(
   var socialNetwork: Vector[Agent] = _
   var socialConnectivity: Float = _
   var socialSuggestibility: Float = _
+
+  // TODO: The neighbourhood isn't used in this
+  /**
+    * Updates the norm of the agent
+    */
+  def updateNorm(): Unit = {
+    val socialWeight = socialConnectivity * socialSuggestibility
+    val subcultureWeight = subcultureConnectivity * adherence
+    val neighbourhoodWeight = neighbourhoodConnectivity * neighbourSuggestiblility
+    val social = countInSubgroup(socialNetwork, socialWeight)
+    val subcultureVals = subculture.preferences.map { case(k, v) => (k, v * subcultureWeight) }
+    val normVal: Map[TransportMode, Double] = Map (norm -> 1.0 * autonomy)
+    val habitVal: Map[TransportMode, Double] = Map (habit -> 1.0 * consistency)
+    var newNorm = social.map { case(k, v) => (k,
+      v * subcultureVals.getOrElse(k, 0.0) * normVal.getOrElse(k, 0.0) * habitVal.getOrElse(k, 0.0)) }
+
+    norm = newNorm.maxBy(_._2)._1
+  }
+
+  private def countInSubgroup(v: Vector[Agent], weight: Float): Map[TransportMode, Double] = {
+    v.groupBy(_.habit).mapValues(_.size.toDouble * weight / v.size)
+  }
 }
