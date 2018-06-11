@@ -58,7 +58,8 @@ class Agent(
            val autonomy: Float,
            val consistency: Float,
            val defiance: Float,
-           val weatherSensitivity: Float
+           val weatherSensitivity: Float,
+           val laziness: Float
            ) {
   var socialNetwork: Set[Agent] = _
   var socialConnectivity: Float = _
@@ -83,6 +84,30 @@ class Agent(
 
   private def countInSubgroup(v: Set[Agent], weight: Float): Map[TransportMode, Double] = {
     v.groupBy(_.habit).mapValues(_.size.toDouble * weight / v.size)
+  }
+
+  def chooseMode2(weather: Weather, changeInWeather: Boolean): Unit = {
+    /*
+     * capacity = activeness * feasibility
+     * cost = capacity * supportiveness * weather
+     * decision = (laziness * cost) * (autonomy * norm) * (consistency * habit)
+     *
+     * TODO: This needs to be checked for correctness
+     */
+    habit = currentMode
+
+    val feasibility = subculture.feasibility(distance)
+    val capacity: Map[TransportMode, Double] = feasibility.map { case (k, v) => (k, v.toDouble * k.effort)}
+    // TODO: How does weather fit in to here
+    val cost: Map[TransportMode, Double] = capacity.intersectWith(neighbourhood.supportiveness)(_ * _)
+
+    val normVal: Map[TransportMode, Double] = Map (norm -> 1.0 * autonomy)
+    val habitVal: Map[TransportMode, Double] = Map (habit -> 1.0 * consistency)
+    val lazyCost: Map[TransportMode, Double] = cost.map { case (k, v) => (k, v * laziness)}
+
+    val valuesToMultiply: List[Map[TransportMode, Double]] = List(lazyCost, normVal, habitVal)
+    // TODO: Should this be max or min
+    currentMode = valuesToMultiply.reduce(_.intersectWith(_)(_ * _)).maxBy(_._2)._1
   }
 
   /*
