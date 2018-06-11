@@ -5,13 +5,13 @@ val numberOfNeighbourhoods = 20
 val numberOfPeople = 150000
 val years = 1
 val days = years * 365
-def weekday (day: Int) = day % 7 < 4
-def season (day: Int): Season = day match {
-  case x if ((x % 365) >= 0 && (x % 365) < 59) || ((x % 365) >= 334 && (x % 365) < 365) => Winter
-  case x if (x % 365) >= 59 && (x % 365) < 151 => Spring
-  case x if (x % 365) >= 151 && (x % 365) < 243 => Summer
-  case x if (x % 365) >= 243 && (x % 365) < 334 => Autumn
-}
+//def weekday (day: Int) = day % 7 < 4
+//def season (day: Int): Season = day match {
+//  case x if ((x % 365) >= 0 && (x % 365) < 59) || ((x % 365) >= 334 && (x % 365) < 365) => Winter
+//  case x if (x % 365) >= 59 && (x % 365) < 151 => Spring
+//  case x if (x % 365) >= 151 && (x % 365) < 243 => Summer
+//  case x if (x % 365) >= 243 && (x % 365) < 334 => Autumn
+//}
 
 // Agent belongings
 val numberOfNetworkContactsPerAgent = 20   // Vary about distribution, who to include?
