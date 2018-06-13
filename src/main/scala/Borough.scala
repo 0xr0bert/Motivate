@@ -1,9 +1,7 @@
 import java.io.{File, PrintWriter}
 
-object Borough {
+class Borough (val id: Int, val totalYears: Int, val numberOfPeople: Int) extends Runnable {
   var residents: Set[Agent] = Set[Agent]()
-  val totalYears: Int = 5
-  val numberOfPeople: Int = 150000
 
   /**
     * Determines whether a given day is a weekday
@@ -24,23 +22,23 @@ object Borough {
     case x if (x % 365) >= 243 && (x % 365) < 334 => Autumn
   }
 
-  def main(args: Array[String]): Unit = {
+  def run(): Unit = {
     // Used for monitoring running-time
     val t0 = System.nanoTime()
     setUp()
     println("Agents created")
 
     // Output to a CSV
-    val writer = new PrintWriter(new File("output.csv"))
+    val writer = new PrintWriter(new File(s"output_$id.csv"))
     // Header row for the csv
-    writer.println("Day,ActiveMode,ActiveNorm")
-
-    // Record info for day 0
-    val firstActive = countActive()
-    writer.println(s"0,${firstActive._1},${firstActive._2}")
+    writer.println("Day,ActiveMode,ActiveModeCounterToInactiveNorm,InactiveModeCounterToActiveNorm,ActiveNorm,Rain")
 
     // Start in winter (1st Jan)
     var weather = if (scala.util.Random.nextFloat() > Winter.percentageBadWeather) Good else Bad
+
+    // Record info for day 0
+    val firstStats = countStats()
+    writer.println(s"0,${firstStats._1},${firstStats._2},${firstStats._3},${firstStats._4},${if (weather == Bad) 1 else 0}")
 
     for(i <- 1 to totalYears * 365) {
       if (weekday(i)) {
@@ -57,15 +55,15 @@ object Borough {
         residents.foreach(_.updateNorm())
 
         // Count the number of active commutes, and write them to the csv file
-        val active = countActive()
-        writer.println(s"$i,${active._1},${active._2}")
+        val stats = countStats()
+        writer.println(s"$i,${stats._1},${stats._2},${stats._3},${stats._4},${if (weather == Bad) 1 else 0}")
       }
     }
 
     // Close the file
     writer.close()
     val t1 = System.nanoTime()
-    println(s"Elapsed time ${t1 - t0}ns")
+    println(s"[$id] Elapsed time ${t1 - t0}ns")
   }
 
   /**
@@ -78,11 +76,14 @@ object Borough {
   }
 
   /**
-    * Counts the number of commutes that were active (Walking or Cycling)
-    * @return a tuple (Number of active commutes, Number of agents who's norm is active)
+    * Counts the statistics at the current day
+    * @return a tuple (Number of active commutes, Number of active commutes counter to their (inactive) norm,
+    *         Number of inactive commutes counter to their norm, Number of agents who's norm is active)
     */
-  def countActive(): (Int, Int) = {
-    (residents.count((a: Agent) => a.currentMode == Walk || a.currentMode == Cycle),
-    residents.count((a: Agent) => a.norm == Walk || a.norm == Cycle))
+  def countStats(): (Int, Int, Int, Int) = {
+    (residents.count(a => a.currentMode == Walk || a.currentMode == Cycle),
+      residents.count(a => (a.currentMode == Walk || a.currentMode == Cycle) && (a.norm != Walk && a.norm != Cycle)),
+      residents.count(a => (a.currentMode != Walk && a.currentMode != Cycle) && (a.norm == Walk || a.norm == Cycle)),
+      residents.count(a => a.norm == Walk || a.norm == Cycle))
   }
 }

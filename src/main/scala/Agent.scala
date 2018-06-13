@@ -96,6 +96,7 @@ class Agent(
      *
      * TODO: This needs to be checked for correctness
      * TODO: Clarify this function
+     * If the weather is good, do they just follow their norm?
      */
     habit = currentMode
 
