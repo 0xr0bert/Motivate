@@ -75,6 +75,32 @@ class Borough (val id: Int, val totalYears: Int, val numberOfPeople: Int) extend
     }
   }
 
+  /*
+   * This method is O(n^2)
+   */
+  def linkAgents(agents: Vector[Agent]): Unit = {
+    var unlinkedAgents = agents
+    while (unlinkedAgents.size > 1) {
+      val r0 = scala.util.Random.nextInt(unlinkedAgents.size)
+      val r1 = scala.util.Random.nextInt(unlinkedAgents.size)
+      if (r0 != r1) {
+        val agent0 = unlinkedAgents(r0)
+        val agent1 = unlinkedAgents(r1)
+        agent0.socialNetwork += agent1
+        agent1.socialNetwork += agent0
+        // TODO: Can this be done more efficiently O(n)
+        unlinkedAgents = unlinkedAgents.filter(_.socialNetwork.size < 20)
+//        if (agent0.socialNetwork.size == 20 && agent1.socialNetwork.size == 20) {
+//          unlinkedAgents = unlinkedAgents.filterNot(a => a == agent0 || a == agent1)
+//        } else if (agent0.socialNetwork.size == 20) {
+//          unlinkedAgents = unlinkedAgents.filterNot(_ == agent0)
+//        } else if (agent1.socialNetwork.size == 20) {
+//          unlinkedAgents = unlinkedAgents.filterNot(_ == agent1)
+//        }
+      }
+    }
+  }
+
   /**
     * Counts the statistics at the current day
     * @return a tuple (Number of active commutes, Number of active commutes counter to their (inactive) norm,

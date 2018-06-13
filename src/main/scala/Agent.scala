@@ -62,7 +62,7 @@ class Agent(
            val weatherSensitivity: Float,
            val laziness: Float
            ) {
-  var socialNetwork: Set[Agent] = _
+  var socialNetwork: Set[Agent] = Set()
   var socialConnectivity: Float = _
   var socialSuggestibility: Float = _
 
