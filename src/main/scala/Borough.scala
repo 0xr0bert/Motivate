@@ -1,6 +1,11 @@
 import java.io.{File, PrintWriter}
 
-class Borough (val id: Int, val totalYears: Int, val numberOfPeople: Int) extends Runnable {
+class Borough (val id: Int,
+               val totalYears: Int,
+               val numberOfPeople: Int,
+               val socialConnectivity: Int,
+               val subcultureConnectivity: Int,
+               val neighbourhoodConnectivity:Int) extends Runnable {
   var residents: Set[Agent] = Set[Agent]()
 
   /**

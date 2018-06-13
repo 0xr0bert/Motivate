@@ -10,197 +10,128 @@ import Scalaz._
 
  TODO: What parameters are needed, and how do they impact the functions of Agent
  */
-
-/***
-  * An Agent for the model
-  *
-  * @param subculture                The mobility subculture the agent is a member of
-  * @param subcultureConnectivity    Importance of subculture to individual agent for making decisions about commuting.
-  *                                  1 = No adjustment.
-  *                                  < 1 = Down weighting of importance
-  *                                  > 1 = Up weighting of importance.
-  *                                  0 = No importance/ ignore factor.
-  * @param neighbourhood             The neighbourhood in which the agent lives
-  * @param neighbourhoodConnectivity Importance of local neighbourhood to individual agent
-  *                                  for making decisions about commuting.
-  *                                  1 = No adjustment.
-  *                                  < 1 = Down weighting of importance
-  *                                  > 1 = Up weighting of importance.
-  *                                  0 = No importance/ ignore factor.
-  * @param distance The JourneyType that signifies the commute distance
+/**
+  * An agent for the model
+  * @param subculture The demographic subculture the agent belongs to
+  * @param neighbourhood The neighbourhood the agent lives in
+  * @param commuteLength The JourneyType that signifies the commute distance
+  * @param perceivedEffort The perceived effort of a mode of transport, for a given journey length
+  *                        values should be between 0-1
+  * @param weatherSensitivity How sensitive the agent is to weather (between 0-1)
+  * @param autonomy How important the agent's norm is in deciding their mode of travel (between 0-1)
+  * @param consistency How important the agent's habit is in deciding their mode of travel (between 0-1)
+  * @param suggestibility How suggestible the agent is to the influence of their social network,
+  *                       subculture, and neighbourhood (between 0-2):
+  *                       1 = No adjustment
+  *                       < 1 = Less important
+  *                       > 1 = More important
+  * @param socialConnectivity How connected the agent is to their social network
+  * @param subcultureConnectivity How connected the agent is to their subculture
+  * @param neighbourhoodConnectivity How connected the agent is to their neighbourhood
   * @param currentMode How the agent is currently going to work
-  * @param habit Commuting mode last used
-  * @param norm Preferences for a particular commuting mode
-  * @param adherence How important is an agent’s subculture in directing their norm?
-  *                  Score from 0-1. 0 - No effect.
-  * @param neighbourSuggestiblility How important are the observed habits of neighbours in directing an agent’s norm?
-  *                                 Score from 0-1. 0 - No effect
-  * @param autonomy How important group norms are to an agent choosing their commuting mode
-  *                 Score from 0-1. 0 - No effect
-  * @param consistency How much of an impact habits have on present choice of commuting mode
-  *                    Score from 0-1. 0 - No effect
-  * @param defiance How much the supportiveness of the physical environment
-  *                 conditions an agents choice of commuting mode
-  *                 Score from 0-1. 0 - No effect
-  * @param weatherSensitivity How much weather affects an agent.
-  *                           Score from 0-1. 0 - No effect.
+  * @param habit The last commuting mode used
+  * @param norm The preferred commuting mode
   */
-class Agent(
-           val subculture: Subculture,
-           val subcultureConnectivity: Float,
-           val neighbourhood: Neighbourhood,
-           val neighbourhoodConnectivity: Float,
-           val distance: JourneyType,
-           var currentMode: TransportMode,
-           var habit: TransportMode,
-           var norm: TransportMode,
-           val adherence: Float,
-           val neighbourSuggestiblility: Float,
-           val autonomy: Float,
-           val consistency: Float,
-           val defiance: Float,
-           val weatherSensitivity: Float,
-           val laziness: Float
+class Agent(val subculture: Subculture,
+            val neighbourhood: Neighbourhood,
+            val commuteLength: JourneyType,
+            val perceivedEffort: Map[JourneyType, Map[TransportMode, Float]],
+            val weatherSensitivity: Float,
+            val autonomy: Float,
+            val consistency: Float,
+            val suggestibility: Float,
+            val socialConnectivity: Float,
+            val subcultureConnectivity: Float,
+            val neighbourhoodConnectivity: Float,
+            var currentMode: TransportMode,
+            var habit: TransportMode,
+            var norm: TransportMode
            ) {
   var socialNetwork: Set[Agent] = Set()
-  var socialConnectivity: Float = _
-  var socialSuggestibility: Float = _
+  var neighbours: Set[Agent] = Set()
 
-  // TODO: The neighbourhood isn't used in this
   /**
     * Updates the norm of the agent
+    *
+    * Uses the following function
+    * maximise:
+    * v * socialNetwork + w * neighbourhood + x * subcultureDesirability + y * norm + z * habit
+    *
+    * where:
+    * v = socialConnectivity * suggestibility
+    * w = neighbourhoodConnectivity * suggestibility
+    * x = subcultureConnectivity * suggestibility
+    * y = adherence
+    * z = consistency
     */
   def updateNorm(): Unit = {
-    val socialWeight = socialConnectivity * socialSuggestibility
-    val subcultureWeight = subcultureConnectivity * adherence
-    val neighbourhoodWeight = neighbourhoodConnectivity * neighbourSuggestiblility
-    val social = countInSubgroup(socialNetwork, socialWeight)
-    val subcultureVals = subculture.preferences.map { case(k, v) => (k, v * subcultureWeight) }
-    val normVal: Map[TransportMode, Double] = Map (norm -> autonomy)
-    val habitVal: Map[TransportMode, Double] = Map (habit -> consistency)
-    val valuesToAdd: List[Map[TransportMode, Double]] = List(social, subcultureVals, normVal, habitVal)
-    // Adds adds all the values and selects the maximum
+    val socialVals = countInSubgroup(socialNetwork, socialConnectivity * suggestibility)
+    val neighbourVals = countInSubgroup(neighbours, neighbourhoodConnectivity * suggestibility)
+    val subcultureVals = subculture.desirability.map { case(k, v) => (k, v * subcultureConnectivity * suggestibility)}
+    val normVals: Map[TransportMode, Float] = Map(norm -> autonomy)
+    val habitVals: Map[TransportMode, Float] = Map(habit -> consistency)
+    val valuesToAdd: List[Map[TransportMode, Float]] = List(socialVals, neighbourVals, subcultureVals,normVals, habitVals)
+
     norm = valuesToAdd.reduce(_.intersectWith(_)(_ + _)).maxBy(_._2)._1
   }
 
-  private def countInSubgroup(v: Set[Agent], weight: Float): Map[TransportMode, Double] = {
-    v.groupBy(_.habit).mapValues(_.size.toDouble * weight / v.size)
-  }
-
-  def chooseMode2(weather: Weather, changeInWeather: Boolean): Unit = {
-    /*
-     * weather = 1 - sensitivityToWeather ?
-     * capacity = activeness * feasibility
-     * cost = capacity * supportiveness * weather
-     * decision = (laziness * cost) + (autonomy * norm) + (consistency * habit)
-     *
-     * TODO: This needs to be checked for correctness
-     * TODO: Clarify this function
-     * If the weather is good, do they just follow their norm?
-     */
-    habit = currentMode
-
-    val feasibility = subculture.feasibility(distance)
-    val capacity: Map[TransportMode, Double] = feasibility.map { case (k, v) => (k, v.toDouble * k.effort)}
-    // TODO: How does weather fit in to here
-    val weatherModifier: Map[TransportMode, Double] = Map (
-      Cycle -> 1.0 - weatherSensitivity,
-      Walk -> 1.0 - weatherSensitivity
-    )
-    val cost: Map[TransportMode, Double] = if (weather == Good) capacity.intersectWith(neighbourhood.supportiveness)(_ * _)
-    else capacity.intersectWith(neighbourhood.supportiveness)(_ * _).intersectWith(weatherModifier)(_ * _)
-
-    val normVal: Map[TransportMode, Double] = Map (norm -> autonomy)
-    val habitVal: Map[TransportMode, Double] = Map (habit -> consistency)
-    val lazyCost: Map[TransportMode, Double] = cost.map { case (k, v) => (k, v * laziness)}
-
-    val valuesToMultiply: List[Map[TransportMode, Double]] = List(lazyCost, normVal, habitVal)
-    // TODO: Should this be max or min
-    currentMode = valuesToMultiply.reduce(_.intersectWith(_)(_ + _)).maxBy(_._2)._1
-  }
-
-  /*
-  Every agent has a variable sensitivity to bad weather, from being very hardy to very averse.
-  Each agent has a ‘weather_sensitivity’ variable drawn at agent initiation from a continuous uniform
-  distribution U(0,1). Currently, the effect of habit either strengthens or weakens the random value drawn to compare
-  against weather sensitivity by +/- 0.1. Effectively, cycling or walking in bad weather yesterday strengthens your
-  resolve to do it again, whereas switching to a non-active mode weakens your resolve to commute actively on the next
-  day of bad weather. Currently, any negative change to the weather sparks a new decision and hence intermittent periods
-  of bad weather are independent of one another.
-   */
-  def chooseMode(weather: Weather, changeInWeather: Boolean) : Unit = {
-    match weather {
-      case Good => currentMode = norm
-      case Bad => currentMode = choose(changeInWeather)
-    }
-
-    habit = currentMode
-  }
-
-  // TODO: Shouldn't the suggestibilities be used here?
   /**
-    * Weather should be bad if this is called
-    * @param changeInWeather if the weather has changed (to be bad)
-    * @return the chosen TransportMode
+    * Calculates the percentages for each different travel mode in a group of agents, multiplied by some weight
+    * @param v an iterable of agents
+    * @param weight the weight to multiply by
+    * @return a Map of TransportModes to weighted percentages
     */
-  private def choose(changeInWeather: Boolean) : TransportMode = {
-    if (!changeInWeather && (norm == Walk || norm == Cycle)) {
-      // Weather is consistently bad and active mode
-      val r = scala.util.Random
-      var randomValue = r.nextDouble()
-      // Strengthen or dampen based on habit
-      // TODO: Should these be the other way around?
-      if (habit == Walk || habit == Cycle) {
-        randomValue -= 0.1
-      } else {
-        randomValue += 0.1
-      }
+  private def countInSubgroup(v: Iterable[Agent], weight: Float): Map[TransportMode, Float] =
+    v.groupBy(_.habit).mapValues(_.size * weight / v.size)
 
-      if (weatherSensitivity > randomValue) {
-        // Ignore the bad weather
-        norm
-      } else if (habit == PublicTransport || habit == Car) {
-        habit
-      } else {
-        PublicTransport
-      }
+  /**
+    * Choose how the agent travels to work
+    * @param weather the current weather
+    * @param changeInWeather whether there has been a change in the weather
+    */
+  def chooseMode(weather: Weather, changeInWeather: Boolean): Unit = {
+    habit = currentMode
 
-      /*
-      else if (!car) {
-        return PublicTransport
-      } else {
-        val randomInt = r.nextInt(2)
-        if (randomInt == 0) {
-          return PublicTransport
-        } else {
-          return Car
-        }
-      }
-       */
-    } else if (!changeInWeather) {
-      norm
-    } else if (changeInWeather && (norm == Walk || norm == Cycle)) {
-      val r = scala.util.Random
-      val randomValue = r.nextDouble()
-      if (weatherSensitivity > randomValue) {
-        norm
-      } else {
-        PublicTransport
-      }
-      /*
-      else if (!car) {
-        return PublicTransport
-      } else {
-        val randomInt = r.nextInt(2)
-        if (randomInt == 0) {
-          return PublicTransport
-        } else {
-          return Car
-        }
-      }
-       */
-    } else {
-      norm
+    weather match {
+      case Good => currentMode = norm
+      case Bad => currentMode = choose(weather, changeInWeather)
     }
+  }
+
+  /**
+    * Choose a new mode of travel if their is bad weather
+    *
+    * maximise:
+    * ((autonomy * norm) + (consistency * habit) + supportiveness)) * weather * effort
+    *
+    * @param weather the weather
+    * @param changeInWeather whether there has been a change in the weather
+    * @return the chosen transport mode
+    */
+  private def choose(weather: Weather, changeInWeather: Boolean): TransportMode = {
+    val normVal: Map[TransportMode, Float] = Map (norm -> autonomy)
+    val habitVal: Map[TransportMode, Float] = Map (habit -> consistency)
+    val valuesToAdd: List[Map[TransportMode, Float]] = List(normVal, habitVal, neighbourhood.supportiveness)
+
+    val intermediate: Map[TransportMode, Float] = valuesToAdd.reduce(_.intersectWith(_)(_ + _))
+    val effort = perceivedEffort(commuteLength).map { case (k, v) => (k, 1.0f - v) }
+
+    // Cycling or walking in bad weather yesterday, strengthens your resolve to do so again
+    // Taking a non-active mode weakens your resolve
+    val resolve = if (!changeInWeather && (habit == Cycle || habit == Walk)) {
+      0.1f
+    } else if (!changeInWeather) {
+      -0.1f
+    } else {
+      0.0f
+    }
+
+    var weatherModifier: Map[TransportMode, Float] = Map (
+      Cycle -> 1.0f - weatherSensitivity + resolve,
+      Walk -> 1.0f - weatherSensitivity + resolve
+    )
+
+    val valuesToMultiply: List[Map[TransportMode, Float]] = List(intermediate, weatherModifier, effort)
+    valuesToMultiply.reduce(_.intersectWith(_)(_ * _)).maxBy(_._2)._1
   }
 }
