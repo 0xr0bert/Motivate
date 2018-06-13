@@ -1,11 +1,15 @@
 import java.io.{File, PrintWriter}
 
+import scala.collection.mutable
+
 class Borough (val id: Int,
                val totalYears: Int,
                val numberOfPeople: Int,
                val socialConnectivity: Int,
                val subcultureConnectivity: Int,
-               val neighbourhoodConnectivity:Int) extends Runnable {
+               val neighbourhoodConnectivity:Int,
+               val numberOfSocialNetworkLinks: Int,
+               val numberOfNeighbourLinks: Int) extends Runnable {
   var residents: Set[Agent] = Set[Agent]()
 
   /**
@@ -75,33 +79,43 @@ class Borough (val id: Int,
     * Generates the agents, allocating them to neighbourhoods, social networks, subcultures
     */
   def setUp(): Unit = {
+    var agents: mutable.HashSet[Agent] = mutable.HashSet()
     for (i <- 1 to numberOfPeople) {
-      // TODO: Generate agents
+
     }
+    linkAgents(agents, numberOfSocialNetworkLinks, _.socialNetwork)
+
+    val neighbourhoodsToAgents: Map[Neighbourhood, mutable.HashSet[Agent]] = agents.groupBy(_.neighbourhood)
+    for ((neighbourhood, localAgents) <- neighbourhoodsToAgents) linkAgents(agents, numberOfNeighbourLinks, _.neighbours)
+    residents = agents.toSet
   }
 
-  /*
-   * This method is O(n^2)
-   */
-  def linkAgents(agents: Vector[Agent]): Unit = {
+  /**
+    * Links agents within a network randomly
+    * @param agents All the agents
+    * @param n The number of links a given agent may have
+    * @param network The network to link
+    */
+  def linkAgents(agents: mutable.HashSet[Agent], n: Int, network: Agent => Set[Agent]): Unit = {
     var unlinkedAgents = agents
+
     while (unlinkedAgents.size > 1) {
       val r0 = scala.util.Random.nextInt(unlinkedAgents.size)
       val r1 = scala.util.Random.nextInt(unlinkedAgents.size)
+
       if (r0 != r1) {
-        val agent0 = unlinkedAgents(r0)
-        val agent1 = unlinkedAgents(r1)
-        agent0.socialNetwork += agent1
-        agent1.socialNetwork += agent0
-        // TODO: Can this be done more efficiently O(n)
-        unlinkedAgents = unlinkedAgents.filter(_.socialNetwork.size < 20)
-//        if (agent0.socialNetwork.size == 20 && agent1.socialNetwork.size == 20) {
-//          unlinkedAgents = unlinkedAgents.filterNot(a => a == agent0 || a == agent1)
-//        } else if (agent0.socialNetwork.size == 20) {
-//          unlinkedAgents = unlinkedAgents.filterNot(_ == agent0)
-//        } else if (agent1.socialNetwork.size == 20) {
-//          unlinkedAgents = unlinkedAgents.filterNot(_ == agent1)
-//        }
+        val agent0 = unlinkedAgents.iterator.drop(r0).next()
+        val agent1 = unlinkedAgents.iterator.drop(r1).next()
+
+        network(agent0) += agent1
+        network(agent1) += agent0
+        if (network(agent0).size >= n) {
+          unlinkedAgents.remove(agent0)
+        }
+
+        if (network(agent1).size >= n) {
+          unlinkedAgents.remove(agent1)
+        }
       }
     }
   }
