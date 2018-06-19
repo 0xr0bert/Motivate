@@ -2,12 +2,15 @@ import java.io.{File, PrintWriter}
 
 import scala.collection.mutable
 
+import scalaz._
+import Scalaz._
+
 class Borough (val id: Int,
                val totalYears: Int,
                val numberOfPeople: Int,
-               val socialConnectivity: Int,
-               val subcultureConnectivity: Int,
-               val neighbourhoodConnectivity:Int,
+               val socialConnectivity: Float,
+               val subcultureConnectivity: Float,
+               val neighbourhoodConnectivity: Float,
                val numberOfSocialNetworkLinks: Int,
                val numberOfNeighbourLinks: Int) extends Runnable {
   var residents: Set[Agent] = Set[Agent]()
@@ -35,7 +38,7 @@ class Borough (val id: Int,
     // Used for monitoring running-time
     val t0 = System.nanoTime()
     setUp()
-    println("Agents created")
+    println(s"[$id] Agents created")
 
     // Output to a CSV
     val writer = new PrintWriter(new File(s"output_$id.csv"))
@@ -51,6 +54,7 @@ class Borough (val id: Int,
 
     for(i <- 1 to totalYears * 365) {
       if (weekday(i)) {
+        println(s"[$id] Day: $i")
         // Get the current season, and work out the weather for the season
         val currentSeason = season(i)
         val randomFloat = scala.util.Random.nextFloat()
@@ -81,25 +85,129 @@ class Borough (val id: Int,
   def setUp(): Unit = {
     var agents: mutable.HashSet[Agent] = mutable.HashSet()
     for (i <- 1 to numberOfPeople) {
+      val perceivedEffort: Map[JourneyType, Map[TransportMode, Float]] = Map(
+        LocalCommute -> Map(
+          Walk -> bound(0, 1, randomNormal(0.2, 0.1)).toFloat,
+          Cycle -> bound(0, 1, randomNormal(0.2, 0.3)).toFloat,
+          PublicTransport -> bound(0, 1, randomNormal(0.2, 0.2)).toFloat,
+          Car -> bound(0, 1, randomNormal(0.2, 0.2)).toFloat
+        ),
+        CityCommute -> Map(
+          Walk -> bound(0, 1, randomNormal(0.7, 0.1)).toFloat,
+          Cycle -> bound(0, 1, randomNormal(0.5, 0.3)).toFloat,
+          PublicTransport -> bound(0, 1, randomNormal(0.2, 0.2)).toFloat,
+          Car -> bound(0, 1, randomNormal(0.2, 0.2)).toFloat
+        ),
+        DistantCommute -> Map(
+          Walk -> 1.0f,
+          Cycle -> 1.0f,
+          PublicTransport -> bound(0, 1, randomNormal(0.2, 0.2)).toFloat,
+          Car -> bound(0, 1, randomNormal(0.2, 0.2)).toFloat
+        )
+      )
 
+      val subculture = chooseSubculture()
+      val neighbourhood = chooseNeighbourhood()
+      val journeyType = chooseJourneyType()
+      val weatherSensitivity = scala.util.Random.nextFloat()
+      val autonomy = scala.util.Random.nextFloat()
+      val consistency = scala.util.Random.nextFloat()
+      val suggestibility = randomNormal(1.0f, 0.25f).toFloat
+      val currentMode = chooseInitialNormAndHabit(
+        subculture, subcultureConnectivity, suggestibility, journeyType, perceivedEffort
+      )
+      val norm = currentMode
+      val habit = currentMode
+
+      agents.add(new Agent(
+        subculture = subculture,
+        neighbourhood = neighbourhood,
+        commuteLength = journeyType,
+        perceivedEffort = perceivedEffort,
+        weatherSensitivity = weatherSensitivity,
+        autonomy = autonomy,
+        consistency = consistency,
+        suggestibility = suggestibility,
+        socialConnectivity = socialConnectivity,
+        subcultureConnectivity = subcultureConnectivity,
+        neighbourhoodConnectivity = neighbourhoodConnectivity,
+        currentMode = currentMode,
+        habit = habit,
+        norm = norm
+      ))
+      println(s"[$id] Agent: [$i] generated")
     }
     linkAgents(agents, numberOfSocialNetworkLinks, _.socialNetwork)
 
     val neighbourhoodsToAgents: Map[Neighbourhood, mutable.HashSet[Agent]] = agents.groupBy(_.neighbourhood)
-    for ((neighbourhood, localAgents) <- neighbourhoodsToAgents) linkAgents(agents, numberOfNeighbourLinks, _.neighbours)
+    for ((_, localAgents) <- neighbourhoodsToAgents) linkAgents(localAgents, numberOfNeighbourLinks, _.neighbours)
     residents = agents.toSet
   }
 
+  def chooseSubculture(): Subculture = {
+    val x = scala.util.Random.nextFloat()
+    if (x <= 1) {
+      SubcultureA
+    } else {
+      SubcultureA
+    }
+  }
+
+  def chooseNeighbourhood(): Neighbourhood = {
+    val x = scala.util.Random.nextFloat()
+    if (x <= 1) {
+      NeighbourhoodOne
+    } else {
+      NeighbourhoodOne
+    }
+  }
+
+  def chooseJourneyType(): JourneyType = {
+    val x = scala.util.Random.nextFloat()
+    if (x <= 0.33) {
+      LocalCommute
+    } else if (x <= 0.66) {
+      CityCommute
+    } else {
+      DistantCommute
+    }
+  }
+
+  /*
+   * intial = (subculture * (subcultureConnectivity * suggestibility)) * effort
+   * TODO: Currently everyone has an active norm, there should maybe be a degree of randomness
+   */
+  def chooseInitialNormAndHabit(
+                               subculture: Subculture,
+                               subcultureConnectivity: Float,
+                               suggestibility: Float,
+                               commuteLength: JourneyType,
+                               perceivedEffort: Map[JourneyType, Map[TransportMode, Float]]
+                               ): TransportMode = {
+    val subcultureWeight = subcultureConnectivity * suggestibility
+    val subcultureDesirabilityWeighted: Map[TransportMode, Float] = subculture.desirability.mapValues(x => x * subcultureWeight)
+    val effortForJourneyInversed: Map[TransportMode, Float] = perceivedEffort(commuteLength).mapValues(x => 1.0f - x)
+    subcultureDesirabilityWeighted.unionWith(effortForJourneyInversed)(_ * _).maxBy(_._2)._1
+  }
+
+
   /**
     * Links agents within a network randomly
+    *
+    * This currently does not terminate
+    *
     * @param agents All the agents
     * @param n The number of links a given agent may have
     * @param network The network to link
     */
-  def linkAgents(agents: mutable.HashSet[Agent], n: Int, network: Agent => Set[Agent]): Unit = {
-    var unlinkedAgents = agents
+  def linkAgents(agents: mutable.HashSet[Agent], n: Int, network: Agent => mutable.Set[Agent]): Unit = {
+    var unlinkedAgents = agents.clone()
 
-    while (unlinkedAgents.size > 1) {
+    while (unlinkedAgents.size > 5) {
+      if (unlinkedAgents.size < 5) {
+        println("")
+      }
+
       val r0 = scala.util.Random.nextInt(unlinkedAgents.size)
       val r1 = scala.util.Random.nextInt(unlinkedAgents.size)
 
@@ -131,4 +239,7 @@ class Borough (val id: Int,
       residents.count(a => (a.currentMode != Walk && a.currentMode != Cycle) && (a.norm == Walk || a.norm == Cycle)),
       residents.count(a => a.norm == Walk || a.norm == Cycle))
   }
+
+  def randomNormal(mean: Double, sd: Double): Double = (scala.util.Random.nextGaussian() * sd) + 1
+  def bound(lowerBound: Double, upperBound: Double, x: Double): Double = Math.min(upperBound, Math.max(lowerBound, x))
 }

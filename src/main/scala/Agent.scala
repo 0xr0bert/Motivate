@@ -1,5 +1,7 @@
 import scalaz._
 import Scalaz._
+
+import scala.collection.mutable
 /*
  Could psychological variables use a random value from a normal distribution mean = 1, s.d. = 0.25,
  then this value could be multiplied by the global importance, to generate the specific importance to the agent
@@ -47,8 +49,8 @@ class Agent(val subculture: Subculture,
             var habit: TransportMode,
             var norm: TransportMode
            ) {
-  var socialNetwork: Set[Agent] = Set()
-  var neighbours: Set[Agent] = Set()
+  var socialNetwork: mutable.Set[Agent] = mutable.Set()
+  var neighbours: mutable.Set[Agent] = mutable.Set()
 
   /**
     * Updates the norm of the agent
@@ -72,7 +74,7 @@ class Agent(val subculture: Subculture,
     val habitVals: Map[TransportMode, Float] = Map(habit -> consistency)
     val valuesToAdd: List[Map[TransportMode, Float]] = List(socialVals, neighbourVals, subcultureVals,normVals, habitVals)
 
-    norm = valuesToAdd.reduce(_.intersectWith(_)(_ + _)).maxBy(_._2)._1
+    norm = valuesToAdd.reduceLeft(_.unionWith(_)(_ + _)).maxBy(_._2)._1
   }
 
   /**
@@ -110,10 +112,12 @@ class Agent(val subculture: Subculture,
     */
   private def choose(weather: Weather, changeInWeather: Boolean): TransportMode = {
     val normVal: Map[TransportMode, Float] = Map (norm -> autonomy)
+    val normWithDefault: Map[TransportMode, Float] = normVal.withDefaultValue(0.0f)
     val habitVal: Map[TransportMode, Float] = Map (habit -> consistency)
-    val valuesToAdd: List[Map[TransportMode, Float]] = List(normVal, habitVal, neighbourhood.supportiveness)
+    val habitWithDefault = habitVal.withDefaultValue(0.0f)
+    val valuesToAdd: List[Map[TransportMode, Float]] = List(normWithDefault, habitWithDefault, neighbourhood.supportiveness)
 
-    val intermediate: Map[TransportMode, Float] = valuesToAdd.reduce(_.intersectWith(_)(_ + _))
+    val intermediate: Map[TransportMode, Float] = valuesToAdd.reduce(_.unionWith(_)(_ + _))
     val effort = perceivedEffort(commuteLength).map { case (k, v) => (k, 1.0f - v) }
 
     // Cycling or walking in bad weather yesterday, strengthens your resolve to do so again
@@ -127,11 +131,14 @@ class Agent(val subculture: Subculture,
     }
 
     var weatherModifier: Map[TransportMode, Float] = Map (
-      Cycle -> 1.0f - weatherSensitivity + resolve,
-      Walk -> 1.0f - weatherSensitivity + resolve
+      Cycle -> (1.0f - weatherSensitivity + resolve),
+      Walk -> (1.0f - weatherSensitivity + resolve),
+      Car -> 1.0f,
+      PublicTransport -> 1.0f
     )
 
     val valuesToMultiply: List[Map[TransportMode, Float]] = List(intermediate, weatherModifier, effort)
-    valuesToMultiply.reduce(_.intersectWith(_)(_ * _)).maxBy(_._2)._1
+    val x = valuesToMultiply.reduce(_.unionWith(_)(_ * _))
+    x.maxBy(_._2)._1
   }
 }
