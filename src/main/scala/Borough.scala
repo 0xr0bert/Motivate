@@ -1,9 +1,12 @@
 import java.io.{File, PrintWriter}
 import java.time.Instant
+import scala.collection.JavaConverters._
 
 import scala.collection.mutable
 import scalaz._
 import Scalaz._
+import org.apache.commons.math3.util.Pair
+import org.apache.commons.math3.distribution.EnumeratedDistribution
 
 class Borough (val id: Int,
                val totalYears: Int,
@@ -87,22 +90,22 @@ class Borough (val id: Int,
     for (i <- 1 to numberOfPeople) {
       val perceivedEffort: Map[JourneyType, Map[TransportMode, Float]] = Map(
         LocalCommute -> Map(
-          Walk -> bound(0, 1, randomNormal(0.2, 0.1)).toFloat,
+          Walk -> bound(0, 1, randomNormal(0.2, 0.3)).toFloat,
           Cycle -> bound(0, 1, randomNormal(0.2, 0.3)).toFloat,
-          PublicTransport -> bound(0, 1, randomNormal(0.2, 0.2)).toFloat,
-          Car -> bound(0, 1, randomNormal(0.2, 0.2)).toFloat
+          PublicTransport -> bound(0, 1, randomNormal(0.2, 0.1)).toFloat,
+          Car -> bound(0, 1, randomNormal(0.2, 0.1)).toFloat
         ),
         CityCommute -> Map(
-          Walk -> bound(0, 1, randomNormal(0.7, 0.1)).toFloat,
+          Walk -> bound(0, 1, randomNormal(0.7, 0.3)).toFloat,
           Cycle -> bound(0, 1, randomNormal(0.5, 0.3)).toFloat,
-          PublicTransport -> bound(0, 1, randomNormal(0.2, 0.2)).toFloat,
-          Car -> bound(0, 1, randomNormal(0.2, 0.2)).toFloat
+          PublicTransport -> bound(0, 1, randomNormal(0.2, 0.1)).toFloat,
+          Car -> bound(0, 1, randomNormal(0.2, 0.1)).toFloat
         ),
         DistantCommute -> Map(
           Walk -> 1.0f,
           Cycle -> 1.0f,
-          PublicTransport -> bound(0, 1, randomNormal(0.2, 0.2)).toFloat,
-          Car -> bound(0, 1, randomNormal(0.2, 0.2)).toFloat
+          PublicTransport -> bound(0, 1, randomNormal(0.2, 0.1)).toFloat,
+          Car -> bound(0, 1, randomNormal(0.2, 0.1)).toFloat
         )
       )
 
@@ -135,6 +138,7 @@ class Borough (val id: Int,
         habit = habit,
         norm = norm
       ))
+      println(s"[$id] Agent $i generated")
     }
     linkAgents(agents, numberOfSocialNetworkLinks, _.socialNetwork)
 
@@ -176,7 +180,6 @@ class Borough (val id: Int,
 
   /*
    * intial = (subculture * (subcultureConnectivity * suggestibility)) * effort
-   * TODO: Currently everyone has an active norm, there should maybe be a degree of randomness
    */
   def chooseInitialNormAndHabit(
                                subculture: Subculture,
@@ -193,37 +196,40 @@ class Borough (val id: Int,
 
 
   /**
-    * Links agents within a network randomly
+    * Generates a random scale-free network using a preferential attachment mechanism
     *
-    * This currently does not terminate
+    * https://en.wikipedia.org/wiki/Barab%C3%A1si%E2%80%93Albert_model
     *
     * @param agents All the agents
-    * @param n The number of links a given agent may have
+    * @param n The minimum number of links an agent should have
     * @param network The network to link
     */
   def linkAgents(agents: mutable.HashSet[Agent], n: Int, network: Agent => mutable.Set[Agent]): Unit = {
     var unlinkedAgents = agents.clone()
+    var linkedAgents: mutable.HashSet[Agent] = mutable.HashSet()
 
-    while (unlinkedAgents.size > 5) {
-      if (unlinkedAgents.size < 5) {
-        println("")
-      }
+    while (unlinkedAgents.nonEmpty) {
+      val r = scala.util.Random.nextInt(unlinkedAgents.size)
+      val newAgent = unlinkedAgents.iterator.drop(r).next()
+      unlinkedAgents.remove(newAgent)
 
-      val r0 = scala.util.Random.nextInt(unlinkedAgents.size)
-      val r1 = scala.util.Random.nextInt(unlinkedAgents.size)
-
-      if (r0 != r1) {
-        val agent0 = unlinkedAgents.iterator.drop(r0).next()
-        val agent1 = unlinkedAgents.iterator.drop(r1).next()
-
-        network(agent0) += agent1
-        network(agent1) += agent0
-        if (network(agent0).size >= n) {
-          unlinkedAgents.remove(agent0)
+      if (linkedAgents.size < n) {
+        for (agent <- linkedAgents) {
+          network(newAgent).add(agent)
+          network(agent).add(newAgent)
         }
+      } else {
+        val totalDegree = linkedAgents.map(a => network(a).size).sum
+        val probabilities: java.util.List[Pair[Agent, java.lang.Double]] = linkedAgents
+          .map(a => new Pair[Agent, java.lang.Double](a, java.lang.Double.valueOf(network(a).size / totalDegree)))
+          .toList.asJava
+        val distribution = new EnumeratedDistribution[Agent](probabilities)
 
-        if (network(agent1).size >= n) {
-          unlinkedAgents.remove(agent1)
+        val friends = distribution.sample(n, new Array[Agent](n))
+
+        for (friend <- friends) {
+          network(friend).add(newAgent)
+          network(newAgent).add(friend)
         }
       }
     }
