@@ -95,7 +95,7 @@ class Agent(val subculture: Subculture,
     habit = currentMode
 
     weather match {
-      case Good => currentMode = norm
+      case Good => currentMode = choose(weather, changeInWeather)
       case Bad => currentMode = choose(weather, changeInWeather)
     }
   }
@@ -112,10 +112,8 @@ class Agent(val subculture: Subculture,
     */
   private def choose(weather: Weather, changeInWeather: Boolean): TransportMode = {
     val normVal: Map[TransportMode, Float] = Map (norm -> autonomy)
-    val normWithDefault: Map[TransportMode, Float] = normVal.withDefaultValue(0.0f)
     val habitVal: Map[TransportMode, Float] = Map (habit -> consistency)
-    val habitWithDefault = habitVal.withDefaultValue(0.0f)
-    val valuesToAdd: List[Map[TransportMode, Float]] = List(normWithDefault, habitWithDefault, neighbourhood.supportiveness)
+    val valuesToAdd: List[Map[TransportMode, Float]] = List(normVal, habitVal, neighbourhood.supportiveness)
 
     val intermediate: Map[TransportMode, Float] = valuesToAdd.reduce(_.unionWith(_)(_ + _))
     val effort = perceivedEffort(commuteLength).map { case (k, v) => (k, 1.0f - v) }
@@ -137,8 +135,7 @@ class Agent(val subculture: Subculture,
       PublicTransport -> 1.0f
     )
 
-    val valuesToMultiply: List[Map[TransportMode, Float]] = List(intermediate, weatherModifier, effort)
-    val x = valuesToMultiply.reduce(_.unionWith(_)(_ * _))
-    x.maxBy(_._2)._1
+    val valuesToMultiply: List[Map[TransportMode, Float]] = if (weather == Good) List(intermediate, effort) else List(intermediate, weatherModifier, effort)
+    valuesToMultiply.reduce(_.unionWith(_)(_ * _)).maxBy(_._2)._1
   }
 }

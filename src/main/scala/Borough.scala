@@ -1,7 +1,7 @@
 import java.io.{File, PrintWriter}
+import java.time.Instant
 
 import scala.collection.mutable
-
 import scalaz._
 import Scalaz._
 
@@ -36,7 +36,7 @@ class Borough (val id: Int,
 
   def run(): Unit = {
     // Used for monitoring running-time
-    val t0 = System.nanoTime()
+    val t0 = Instant.now().getEpochSecond
     setUp()
     println(s"[$id] Agents created")
 
@@ -75,8 +75,8 @@ class Borough (val id: Int,
 
     // Close the file
     writer.close()
-    val t1 = System.nanoTime()
-    println(s"[$id] Elapsed time ${t1 - t0}ns")
+    val t1 = Instant.now().getEpochSecond
+    println(s"[$id] Elapsed time ${t1 - t0}s")
   }
 
   /**
@@ -135,7 +135,6 @@ class Borough (val id: Int,
         habit = habit,
         norm = norm
       ))
-      println(s"[$id] Agent: [$i] generated")
     }
     linkAgents(agents, numberOfSocialNetworkLinks, _.socialNetwork)
 
@@ -146,10 +145,12 @@ class Borough (val id: Int,
 
   def chooseSubculture(): Subculture = {
     val x = scala.util.Random.nextFloat()
-    if (x <= 1) {
+    if (x <= 0.33) {
       SubcultureA
+    } else if (x <= 0.66){
+      SubcultureB
     } else {
-      SubcultureA
+      SubcultureC
     }
   }
 
@@ -240,6 +241,20 @@ class Borough (val id: Int,
       residents.count(a => a.norm == Walk || a.norm == Cycle))
   }
 
+  /**
+    * Returns a random nubmer from a normal distribution
+    * @param mean the mean of the normal distribution
+    * @param sd the standard deviation of the normal distribution
+    * @return a random number from the distribution
+    */
   def randomNormal(mean: Double, sd: Double): Double = (scala.util.Random.nextGaussian() * sd) + 1
+
+  /**
+    * Bounds a number above or below
+    * @param lowerBound the lower bound
+    * @param upperBound the upper bound
+    * @param x the value to be bound
+    * @return if x < lowerBound then lowerBound, if x > upperBound then upperBound, else x
+    */
   def bound(lowerBound: Double, upperBound: Double, x: Double): Double = Math.min(upperBound, Math.max(lowerBound, x))
 }
