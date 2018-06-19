@@ -128,7 +128,7 @@ class Agent(val subculture: Subculture,
       0.0f
     }
 
-    var weatherModifier: Map[TransportMode, Float] = Map (
+    val weatherModifier: Map[TransportMode, Float] = Map(
       Cycle -> (1.0f - weatherSensitivity + resolve),
       Walk -> (1.0f - weatherSensitivity + resolve),
       Car -> 1.0f,

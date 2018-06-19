@@ -7,8 +7,8 @@ object Simulation {
   val socialConnectivity = 0.7f
   val subcultureConnectivity = 0.5f
   val neighbourConnectivity = 0.3f
-  val numberOfSocialLinks = 20
-  val numberOfNeighbourLinks = 20
+  val numberOfSocialLinks = 10
+  val numberOfNeighbourLinks = 10
 
   def main(args: Array[String]): Unit = {
     val t0 = Instant.now().getEpochSecond
