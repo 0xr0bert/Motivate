@@ -45,8 +45,14 @@ class Borough (val id: Int,
     setUp()
     println(s"[$id] Agents created")
 
+    // create output directory
+    val dir = new File("output")
+    if (!dir.exists()) {
+      dir.mkdirs()
+    }
+
     // Output to a CSV
-    val writer = new PrintWriter(new File(s"output_$id.csv"))
+    val writer = new PrintWriter(new File(s"output/output_$id.csv"))
     // Header row for the csv
     writer.println("Day,ActiveMode,ActiveModeCounterToInactiveNorm,InactiveModeCounterToActiveNorm,ActiveNorm,Rain")
 
@@ -235,7 +241,7 @@ class Borough (val id: Int,
     * @param n The minimum number of links an agent should have
     * @param network The network to link
     */
-  def linkAgents(agents: mutable.HashSet[Agent], n: Int, network: Agent => mutable.Set[Agent]): Unit = {
+  def linkAgents(agents: Iterable[Agent], n: Int, network: Agent => mutable.Set[Agent]): Unit = {
     var linkedAgents: mutable.HashSet[Agent] = mutable.HashSet()
 
     for (agent <- agents) {
