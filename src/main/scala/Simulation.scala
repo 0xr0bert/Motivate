@@ -3,7 +3,7 @@ import java.time.Instant
 object Simulation {
   val totalYears = 1
   val numberOfPeople = 30000
-  val numberOfSimulations = 5
+  val numberOfSimulations = 1
   val socialConnectivity = 0.7f
   val subcultureConnectivity = 0.5f
   val neighbourConnectivity = 0.3f
