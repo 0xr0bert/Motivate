@@ -146,7 +146,7 @@ class Borough (val id: Int,
 
       // The currentMode, norm and habit are initially all equal
       val currentMode = chooseInitialNormAndHabit(
-        subculture, subcultureConnectivity, suggestibility, journeyType, perceivedEffort
+        subculture, subcultureConnectivity, suggestibility, journeyType, perceivedEffort, neighbourhood
       )
       val norm = currentMode
       val habit = currentMode
@@ -216,19 +216,21 @@ class Borough (val id: Int,
   }
 
   /*
-   * intial = (subculture * (subcultureConnectivity * suggestibility)) * effort
+   * intial = (subculture * (subcultureConnectivity * suggestibility)) * effort * supportiveness
    */
   def chooseInitialNormAndHabit(
                                subculture: Subculture,
                                subcultureConnectivity: Float,
                                suggestibility: Float,
                                commuteLength: JourneyType,
-                               perceivedEffort: Map[JourneyType, Map[TransportMode, Float]]
+                               perceivedEffort: Map[JourneyType, Map[TransportMode, Float]],
+                               neighbourhood: Neighbourhood,
                                ): TransportMode = {
     val subcultureWeight = subcultureConnectivity * suggestibility
     val subcultureDesirabilityWeighted: Map[TransportMode, Float] = subculture.desirability.mapValues(x => x * subcultureWeight)
     val effortForJourneyInverted: Map[TransportMode, Float] = perceivedEffort(commuteLength).mapValues(x => 1.0f - x)
-    subcultureDesirabilityWeighted.unionWith(effortForJourneyInverted)(_ * _).maxBy(_._2)._1
+    val valuesToMultiply = List(subcultureDesirabilityWeighted, effortForJourneyInverted, neighbourhood.supportiveness)
+    valuesToMultiply.reduce(_.unionWith(_)(_ * _)).maxBy(_._2)._1
   }
 
 

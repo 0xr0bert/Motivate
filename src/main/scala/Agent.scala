@@ -74,7 +74,7 @@ class Agent(val subculture: Subculture,
     val habitVals: Map[TransportMode, Float] = Map(habit -> consistency)
     val valuesToAdd: List[Map[TransportMode, Float]] = List(socialVals, neighbourVals, subcultureVals,normVals, habitVals)
 
-    norm = valuesToAdd.reduceLeft(_.unionWith(_)(_ + _)).maxBy(_._2)._1
+    norm = valuesToAdd.reduce(_.unionWith(_)(_ + _)).maxBy(_._2)._1
   }
 
   /**
