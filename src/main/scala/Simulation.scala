@@ -13,7 +13,7 @@ object Simulation {
   def main(args: Array[String]): Unit = {
     val t0 = Instant.now().getEpochSecond
 
-    val boroughs = (1 to numberOfSimulations).par.map(i => new Borough(
+    val boroughs = for (i <- 1 to numberOfSimulations) yield new Borough(
       id = i,
       totalYears = totalYears,
       numberOfPeople = numberOfPeople,
@@ -22,9 +22,9 @@ object Simulation {
       neighbourhoodConnectivity = neighbourConnectivity,
       numberOfSocialNetworkLinks = numberOfSocialLinks,
       numberOfNeighbourLinks = numberOfNeighbourLinks
-    ))
+    )
 
-    boroughs.foreach(_.run())
+    boroughs.par.foreach(_.run())
 
     val t1 = Instant.now().getEpochSecond
     System.out.println(s"TOTAL RUNNING TIME: ${t1 - t0}s")
