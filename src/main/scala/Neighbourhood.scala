@@ -1,5 +1,3 @@
-// Are these generated or do predefine neighbourhoods?
-
 sealed abstract class Neighbourhood (val supportiveness: Map[TransportMode, Float])
 
 case object NeighbourhoodOne extends Neighbourhood(
