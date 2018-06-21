@@ -90,16 +90,17 @@ class Agent(val subculture: Subculture,
     v.groupBy(_.habit).mapValues(_.size * weight / v.size)
 
   /**
-    * Choose a new mode of travel if their is bad weather
+    * Choose a new mode of travel
     *
     * maximise:
     * ((autonomy * norm) + (consistency * habit) + supportiveness)) * weather * effort
     *
     * @param weather the weather
     * @param changeInWeather whether there has been a change in the weather
-    * @return the chosen transport mode
     */
-  def choose(weather: Weather, changeInWeather: Boolean): TransportMode = {
+  def choose(weather: Weather, changeInWeather: Boolean): Unit = {
+    habit = currentMode
+
     val normVal: Map[TransportMode, Float] = Map (norm -> autonomy)
     val habitVal: Map[TransportMode, Float] = Map (habit -> consistency)
     val valuesToAdd: List[Map[TransportMode, Float]] = List(normVal, habitVal, neighbourhood.supportiveness)
@@ -125,9 +126,11 @@ class Agent(val subculture: Subculture,
     )
 
     val valuesToMultiply: List[Map[TransportMode, Float]] = if (weather == Good) List(intermediate, effort) else List(intermediate, weatherModifier, effort)
-    valuesToMultiply
-      .reduce(_.unionWith(_)(_ + _)) // Add together vals with same key
-      .maxBy(_._2) // find the max tuple by value
-      ._1 // Get the key
+
+    currentMode =
+      valuesToMultiply
+        .reduce(_.unionWith(_)(_ + _)) // Add together vals with same key
+        .maxBy(_._2) // find the max tuple by value
+        ._1 // Get the key
   }
 }
