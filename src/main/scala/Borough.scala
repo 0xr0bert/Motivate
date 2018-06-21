@@ -15,7 +15,8 @@ class Borough (val id: Int,
                val subcultureConnectivity: Float,
                val neighbourhoodConnectivity: Float,
                val numberOfSocialNetworkLinks: Int,
-               val numberOfNeighbourLinks: Int) extends Runnable {
+               val numberOfNeighbourLinks: Int,
+               val weatherPattern: Map[Int, Weather]) extends Runnable {
   var residents: Set[Agent] = Set[Agent]()
 
   /**
@@ -24,18 +25,6 @@ class Borough (val id: Int,
     * @return true if the day is a weekday
     */
   def weekday (day: Int): Boolean = day % 7 < 4
-
-  /**
-    * Gets the season for a given day
-    * @param day the day number
-    * @return the Season for that day
-    */
-  def season (day: Int): Season = day match {
-    case x if ((x % 365) >= 0 && (x % 365) < 59) || ((x % 365) >= 334 && (x % 365) < 365) => Winter
-    case x if (x % 365) >= 59 && (x % 365) < 151 => Spring
-    case x if (x % 365) >= 151 && (x % 365) < 243 => Summer
-    case x if (x % 365) >= 243 && (x % 365) < 334 => Autumn
-  }
 
   def run(): Unit = {
     // Used for monitoring running-time
@@ -57,7 +46,7 @@ class Borough (val id: Int,
     writer.println("Day,ActiveMode,ActiveModeCounterToInactiveNorm,InactiveModeCounterToActiveNorm,ActiveNorm,Rain")
 
     // Start in winter (1st Jan)
-    var weather = if (scala.util.Random.nextFloat() > Winter.percentageBadWeather) Good else Bad
+    var weather = weatherPattern(0)
 
     // Record info for day 0
     val firstStats = countStats()
@@ -66,10 +55,9 @@ class Borough (val id: Int,
     // The simulation starts running here
     for(i <- 1 to totalYears * 365 if weekday(i)) {
       println(s"[$id] Day: $i")
-      // Get the current season, and work out the weather for the season
-      val currentSeason = season(i)
-      val randomFloat = scala.util.Random.nextFloat()
-      val newWeather = if (randomFloat > currentSeason.percentageBadWeather) Good else Bad
+
+      // Get hte weather from the weatherPattern
+      val newWeather = weatherPattern(i)
 
       // For each resident choose their transport mode
       residents.foreach(_.choose(newWeather, weather != newWeather))

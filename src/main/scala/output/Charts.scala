@@ -22,8 +22,8 @@ object Charts {
     */
   def generateXYSeries(file: File, columnID: Short, lineID: String): XYSeries = {
     val series = new XYSeries(lineID)
-    // The first 10 days are dropped to allow it to stabilise
-    Source.fromFile(file).getLines().drop(10).foreach(line => {
+    // The first 10 days are dropped to allow it to stabilise - line 1 is the header
+    Source.fromFile(file).getLines().drop(11).foreach(line => {
       val data = line.split(',')
       series.add(data(0).toInt, data(columnID).toInt)
     })
