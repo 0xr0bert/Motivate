@@ -60,7 +60,7 @@ class Agent(val subculture: Subculture,
     *
     * Uses the following function
     * maximise:
-    * v * socialNetwork + w * neighbourhood + x * subcultureDesirability + y * norm + z * habit
+    * v * socialNetwork + w * neighbours + x * subcultureDesirability + y * norm + z * habit + neighbourhoodSupportiveness
     *
     * where:
     * v = socialConnectivity * suggestibility
@@ -75,7 +75,8 @@ class Agent(val subculture: Subculture,
     val subcultureVals = subculture.desirability.map { case(k, v) => (k, v * subcultureConnectivity * suggestibility)}
     val normVals: Map[TransportMode, Float] = Map(norm -> autonomy)
     val habitVals: Map[TransportMode, Float] = habit.mapValues(_ * consistency)
-    val valuesToAdd: List[Map[TransportMode, Float]] = List(socialVals, neighbourVals, subcultureVals,normVals, habitVals)
+    val valuesToAdd: List[Map[TransportMode, Float]] =
+      List(socialVals, neighbourVals, subcultureVals,normVals, habitVals, neighbourhood.supportiveness)
 
     norm = valuesToAdd
       .reduce(_.unionWith(_)(_ + _)) // Add together vals with same key
