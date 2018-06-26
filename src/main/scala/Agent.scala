@@ -104,8 +104,7 @@ class Agent(val subculture: Subculture,
   def choose(weather: Weather, changeInWeather: Boolean): Unit = {
     lastMode = currentMode
     val lastModeMap: Map[TransportMode, Float] = Map(lastMode -> averageWeight)
-    habit = lastModeMap.unionWith(habit.mapValues(_ * (1 - averageWeight)))(_ * _)
-
+    habit = lastModeMap.unionWith(habit.mapValues(_ * (1 - averageWeight)))(_ + _)
     val normVal: Map[TransportMode, Float] = Map (norm -> autonomy)
 
     val habitVal: Map[TransportMode, Float] = habit.mapValues(_ * consistency)

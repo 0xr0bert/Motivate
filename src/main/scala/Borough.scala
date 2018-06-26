@@ -164,7 +164,7 @@ class Borough (val id: String,
       subcultureConnectivity = subcultureConnectivity,
       neighbourhoodConnectivity = neighbourhoodConnectivity,
       averageWeight = 2.0f / (daysInHabitAverage + 1),
-      habit = Map(currentMode -> 2.0f / (daysInHabitAverage + 1)),
+      habit = Map(currentMode -> 1.0f),
       currentMode = currentMode,
       lastMode = lastMode,
       norm = norm
@@ -214,7 +214,7 @@ class Borough (val id: String,
                                suggestibility: Float,
                                commuteLength: JourneyType,
                                perceivedEffort: Map[JourneyType, Map[TransportMode, Float]],
-                               neighbourhood: Neighbourhood,
+                               neighbourhood: Neighbourhood
                                ): TransportMode = {
 
     val subcultureWeight = subcultureConnectivity * suggestibility
