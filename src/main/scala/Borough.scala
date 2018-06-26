@@ -148,10 +148,10 @@ class Borough (val id: String,
       subculture, subcultureConnectivity, suggestibility, journeyType, perceivedEffort, neighbourhood
     )
     val norm = currentMode
-    val habit = currentMode
+    val lastMode = currentMode
 
-    // Create the agent and add it to the HashSet
-    val agent = new Agent(
+    // Create the agent
+    new Agent(
       subculture = subculture,
       neighbourhood = neighbourhood,
       commuteLength = journeyType,
@@ -163,14 +163,12 @@ class Borough (val id: String,
       socialConnectivity = socialConnectivity,
       subcultureConnectivity = subcultureConnectivity,
       neighbourhoodConnectivity = neighbourhoodConnectivity,
-      daysInHabitAverage = daysInHabitAverage,
+      averageWeight = 2.0f / (daysInHabitAverage + 1),
+      habit = Map(currentMode -> 2.0f / (daysInHabitAverage + 1)),
       currentMode = currentMode,
-      habit = habit,
+      lastMode = lastMode,
       norm = norm
     )
-    agent.log += currentMode
-
-    agent
   }
 
   def chooseSubculture(): Subculture = {

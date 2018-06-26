@@ -32,7 +32,7 @@ import scala.collection.mutable
   * @param subcultureConnectivity How connected the agent is to their subculture
   * @param neighbourhoodConnectivity How connected the agent is to their neighbourhood
   * @param currentMode How the agent is currently going to work
-  * @param habit The last commuting mode used
+  * @param lastMode The last commuting mode used
   * @param norm The preferred commuting mode
   */
 class Agent(val subculture: Subculture,
@@ -46,18 +46,14 @@ class Agent(val subculture: Subculture,
             val socialConnectivity: Float,
             val subcultureConnectivity: Float,
             val neighbourhoodConnectivity: Float,
-            val daysInHabitAverage: Int,
+            val averageWeight: Float,
+            var habit: Map[TransportMode, Float],
             var currentMode: TransportMode,
-            var habit: TransportMode,
+            var lastMode: TransportMode,
             var norm: TransportMode
            ) {
   var socialNetwork: mutable.Set[Agent] = mutable.Set()
   var neighbours: mutable.Set[Agent] = mutable.Set()
-
-  /**
-    * A daily log of chosen transport modes, the key is the day
-    */
-  val log: mutable.MutableList[TransportMode] = mutable.MutableList()
 
   /**
     * Updates the norm of the agent
@@ -78,12 +74,7 @@ class Agent(val subculture: Subculture,
     val neighbourVals = countInSubgroup(neighbours, neighbourhoodConnectivity * suggestibility)
     val subcultureVals = subculture.desirability.map { case(k, v) => (k, v * subcultureConnectivity * suggestibility)}
     val normVals: Map[TransportMode, Float] = Map(norm -> autonomy)
-    val habitVals: Map[TransportMode, Float] = calculateMovingAverage(
-      log.size - 1,
-      Map(),
-      weightFunction(daysInHabitAverage),
-      daysInHabitAverage,
-      weightFunction)
+    val habitVals: Map[TransportMode, Float] = habit.mapValues(_ * consistency)
     val valuesToAdd: List[Map[TransportMode, Float]] = List(socialVals, neighbourVals, subcultureVals,normVals, habitVals)
 
     norm = valuesToAdd
@@ -99,7 +90,7 @@ class Agent(val subculture: Subculture,
     * @return a Map of TransportModes to weighted percentages
     */
   private def countInSubgroup(v: Iterable[Agent], weight: Float): Map[TransportMode, Float] =
-    v.groupBy(_.habit).mapValues(_.size * weight / v.size)
+    v.groupBy(_.lastMode).mapValues(_.size * weight / v.size)
 
   /**
     * Choose a new mode of travel
@@ -111,17 +102,13 @@ class Agent(val subculture: Subculture,
     * @param changeInWeather whether there has been a change in the weather
     */
   def choose(weather: Weather, changeInWeather: Boolean): Unit = {
-    habit = currentMode
+    lastMode = currentMode
+    val lastModeMap: Map[TransportMode, Float] = Map(lastMode -> averageWeight)
+    habit = lastModeMap.unionWith(habit.mapValues(_ * (1 - averageWeight)))(_ * _)
 
     val normVal: Map[TransportMode, Float] = Map (norm -> autonomy)
 
-    val habitVal: Map[TransportMode, Float] = calculateMovingAverage(
-      log.size - 1,
-      Map(),
-      weightFunction(daysInHabitAverage),
-      daysInHabitAverage,
-      weightFunction)
-        .mapValues(_ * consistency)
+    val habitVal: Map[TransportMode, Float] = habit.mapValues(_ * consistency)
 
     val valuesToAdd: List[Map[TransportMode, Float]] = List(normVal, habitVal, neighbourhood.supportiveness)
 
@@ -130,7 +117,7 @@ class Agent(val subculture: Subculture,
 
     // Cycling or walking in bad weather yesterday, strengthens your resolve to do so again
     // Taking a non-active mode weakens your resolve
-    val resolve = if (!changeInWeather && (habit == Cycle || habit == Walk)) {
+    val resolve = if (!changeInWeather && (lastMode == Cycle || lastMode == Walk)) {
       0.1f
     } else if (!changeInWeather) {
       -0.1f
@@ -147,29 +134,10 @@ class Agent(val subculture: Subculture,
 
     val valuesToMultiply: List[Map[TransportMode, Float]] = if (weather == Good) List(intermediate, effort) else List(intermediate, weatherModifier, effort)
 
-    val newMode =
+    currentMode =
       valuesToMultiply
         .reduce(_.unionWith(_)(_ + _)) // Add together vals with same key
         .maxBy(_._2) // find the max tuple by value
         ._1 // Get the key
-
-    log += newMode
-    currentMode = newMode
   }
-
-  @tailrec
-  private def calculateMovingAverage (t: Int,
-                                      accumulator: Map[TransportMode, Float],
-                                      weight: Float,
-                                      daysInHabitAverage: Int,
-                                      weightFunction: Int => Float): Map[TransportMode, Float] = t match {
-    case 0 => accumulator.unionWith(Map(log.head -> 1.0f))(_ + _)
-    case _ => calculateMovingAverage(t - 1,
-      accumulator.unionWith(Map(log(t) -> weight))(_ + _),
-      weight * (1 - weightFunction(daysInHabitAverage)),
-      daysInHabitAverage,
-      weightFunction)
-  }
-
-  private def weightFunction(n: Int): Float = 2.0f / (n + 1.0f)
 }
