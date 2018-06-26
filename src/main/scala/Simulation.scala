@@ -5,12 +5,21 @@ import output.Charts
 object Simulation {
   val totalYears = 1
   val numberOfPeople = 30000
-  val numberOfSimulations = 5
+  val numberOfSimulationsPerScenario = 5
   val socialConnectivity = 0.7f
   val subcultureConnectivity = 0.5f
   val neighbourConnectivity = 0.3f
   val numberOfSocialLinks = 10
   val numberOfNeighbourLinks = 10
+  val daysInHabitAverage = 30
+  val scenarios: Map[String, Scenario] = Map(
+    "pre intervention" -> new Scenario(Set(
+      new Neighbourhood(Map(Car -> 0.9f, Cycle -> 0.7f, Walk -> 0.8f, PublicTransport -> 0.9f)),
+      new Neighbourhood(Map(Car -> 0.5f, Cycle -> 0.7f, Walk -> 0.8f, PublicTransport -> 1.0f)),
+      new Neighbourhood(Map(Car -> 0.9f, Cycle -> 0.2f, Walk -> 0.6f, PublicTransport -> 0.5f)),
+      new Neighbourhood(Map(Car -> 0.2f, Cycle -> 0.9f, Walk -> 0.9f, PublicTransport -> 0.9f))
+    ))
+  )
 
   def main(args: Array[String]): Unit = {
     val t0 = Instant.now().getEpochSecond
@@ -22,8 +31,9 @@ object Simulation {
         if (randomFloat > currentSeason.percentageBadWeather) Good else Bad }
     ).toMap
 
-    val boroughs = for (i <- 1 to numberOfSimulations) yield new Borough(
-      id = i,
+    val boroughs = for ((scenarioID, scenario) <- scenarios; i <- 1 to numberOfSimulationsPerScenario) yield new Borough(
+      id = s"$scenarioID-$i",
+      scenario = scenario,
       totalYears = totalYears,
       numberOfPeople = numberOfPeople,
       socialConnectivity = socialConnectivity,
@@ -31,6 +41,7 @@ object Simulation {
       neighbourhoodConnectivity = neighbourConnectivity,
       numberOfSocialNetworkLinks = numberOfSocialLinks,
       numberOfNeighbourLinks = numberOfNeighbourLinks,
+      daysInHabitAverage = daysInHabitAverage,
       weatherPattern = weatherPattern
     )
 

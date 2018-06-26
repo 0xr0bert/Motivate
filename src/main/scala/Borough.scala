@@ -8,7 +8,8 @@ import Scalaz._
 import org.apache.commons.math3.util.Pair
 import org.apache.commons.math3.distribution.{EnumeratedDistribution, NormalDistribution}
 
-class Borough (val id: Int,
+class Borough (val id: String,
+               val scenario: Scenario,
                val totalYears: Int,
                val numberOfPeople: Int,
                val socialConnectivity: Float,
@@ -16,6 +17,7 @@ class Borough (val id: Int,
                val neighbourhoodConnectivity: Float,
                val numberOfSocialNetworkLinks: Int,
                val numberOfNeighbourLinks: Int,
+               val daysInHabitAverage: Int,
                val weatherPattern: Map[Int, Weather]) extends Runnable {
   var residents: Set[Agent] = Set[Agent]()
 
@@ -149,7 +151,7 @@ class Borough (val id: Int,
     val habit = currentMode
 
     // Create the agent and add it to the HashSet
-    new Agent(
+    val agent = new Agent(
       subculture = subculture,
       neighbourhood = neighbourhood,
       commuteLength = journeyType,
@@ -161,10 +163,14 @@ class Borough (val id: Int,
       socialConnectivity = socialConnectivity,
       subcultureConnectivity = subcultureConnectivity,
       neighbourhoodConnectivity = neighbourhoodConnectivity,
+      daysInHabitAverage = daysInHabitAverage,
       currentMode = currentMode,
       habit = habit,
       norm = norm
     )
+    agent.log += currentMode
+
+    agent
   }
 
   def chooseSubculture(): Subculture = {
@@ -179,16 +185,15 @@ class Borough (val id: Int,
   }
 
   def chooseNeighbourhood(): Neighbourhood = {
-    val x = scala.util.Random.nextFloat()
-    if (x <= 0.25) {
-      NeighbourhoodOne
-    } else if (x <= 0.5){
-      NeighbourhoodTwo
-    } else if (x <= 0.75) {
-      NeighbourhoodThree
-    } else {
-      NeighbourhoodFour
-    }
+    // The probabilities are normalised by EnumeratedDistribution
+    val probabilities: java.util.List[Pair[Neighbourhood, java.lang.Double]] =
+      scenario.neighbourhoods
+        .map(n => new Pair[Neighbourhood, java.lang.Double](n, java.lang.Double.valueOf(1.0)))
+        .toList
+        .asJava
+
+    val distribution = new EnumeratedDistribution[Neighbourhood](probabilities)
+    distribution.sample()
   }
 
   def chooseJourneyType(): JourneyType = {
