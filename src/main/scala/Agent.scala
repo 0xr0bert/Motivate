@@ -81,7 +81,8 @@ class Agent(val subculture: Subculture,
     val habitVals: Map[TransportMode, Float] = calculateMovingAverage(
       log.size - 1,
       Map(),
-      weightFunction(log.size),
+      weightFunction(daysInHabitAverage),
+      daysInHabitAverage,
       weightFunction)
     val valuesToAdd: List[Map[TransportMode, Float]] = List(socialVals, neighbourVals, subcultureVals,normVals, habitVals)
 
@@ -117,7 +118,8 @@ class Agent(val subculture: Subculture,
     val habitVal: Map[TransportMode, Float] = calculateMovingAverage(
       log.size - 1,
       Map(),
-      weightFunction(log.size),
+      weightFunction(daysInHabitAverage),
+      daysInHabitAverage,
       weightFunction)
         .mapValues(_ * consistency)
 
@@ -159,13 +161,15 @@ class Agent(val subculture: Subculture,
   private def calculateMovingAverage (t: Int,
                                       accumulator: Map[TransportMode, Float],
                                       weight: Float,
-                                      weightFunction: Float => Float): Map[TransportMode, Float] = t match {
+                                      daysInHabitAverage: Int,
+                                      weightFunction: Int => Float): Map[TransportMode, Float] = t match {
     case 0 => accumulator.unionWith(Map(log.head -> 1.0f))(_ + _)
     case _ => calculateMovingAverage(t - 1,
       accumulator.unionWith(Map(log(t) -> weight))(_ + _),
-      weight * (1 - weightFunction(log.size)),
+      weight * (1 - weightFunction(daysInHabitAverage)),
+      daysInHabitAverage,
       weightFunction)
   }
 
-  private def weightFunction(n: Float) = 2 / (n + 1)
+  private def weightFunction(n: Int): Float = 2.0f / (n + 1.0f)
 }
