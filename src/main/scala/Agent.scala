@@ -1,6 +1,7 @@
 import scalaz._
 import Scalaz._
 
+import scala.annotation.tailrec
 import scala.collection.mutable
 /*
  Could psychological variables use a random value from a normal distribution mean = 1, s.d. = 0.25,
@@ -31,7 +32,7 @@ import scala.collection.mutable
   * @param subcultureConnectivity How connected the agent is to their subculture
   * @param neighbourhoodConnectivity How connected the agent is to their neighbourhood
   * @param currentMode How the agent is currently going to work
-  * @param habit The last commuting mode used
+  * @param lastMode The last commuting mode used
   * @param norm The preferred commuting mode
   */
 class Agent(val subculture: Subculture,
@@ -45,8 +46,10 @@ class Agent(val subculture: Subculture,
             val socialConnectivity: Float,
             val subcultureConnectivity: Float,
             val neighbourhoodConnectivity: Float,
+            val averageWeight: Float,
+            var habit: Map[TransportMode, Float],
             var currentMode: TransportMode,
-            var habit: TransportMode,
+            var lastMode: TransportMode,
             var norm: TransportMode
            ) {
   var socialNetwork: mutable.Set[Agent] = mutable.Set()
@@ -71,7 +74,7 @@ class Agent(val subculture: Subculture,
     val neighbourVals = countInSubgroup(neighbours, neighbourhoodConnectivity * suggestibility)
     val subcultureVals = subculture.desirability.map { case(k, v) => (k, v * subcultureConnectivity * suggestibility)}
     val normVals: Map[TransportMode, Float] = Map(norm -> autonomy)
-    val habitVals: Map[TransportMode, Float] = Map(habit -> consistency)
+    val habitVals: Map[TransportMode, Float] = habit.mapValues(_ * consistency)
     val valuesToAdd: List[Map[TransportMode, Float]] = List(socialVals, neighbourVals, subcultureVals,normVals, habitVals)
 
     norm = valuesToAdd
@@ -87,7 +90,7 @@ class Agent(val subculture: Subculture,
     * @return a Map of TransportModes to weighted percentages
     */
   private def countInSubgroup(v: Iterable[Agent], weight: Float): Map[TransportMode, Float] =
-    v.groupBy(_.habit).mapValues(_.size * weight / v.size)
+    v.groupBy(_.lastMode).mapValues(_.size * weight / v.size)
 
   /**
     * Choose a new mode of travel
@@ -99,10 +102,14 @@ class Agent(val subculture: Subculture,
     * @param changeInWeather whether there has been a change in the weather
     */
   def choose(weather: Weather, changeInWeather: Boolean): Unit = {
-    habit = currentMode
+    lastMode = currentMode
+    val lastModeMap: Map[TransportMode, Float] = Map(lastMode -> averageWeight)
+    habit = lastModeMap.unionWith(habit.mapValues(_ * (1 - averageWeight)))(_ * _)
 
     val normVal: Map[TransportMode, Float] = Map (norm -> autonomy)
-    val habitVal: Map[TransportMode, Float] = Map (habit -> consistency)
+
+    val habitVal: Map[TransportMode, Float] = habit.mapValues(_ * consistency)
+
     val valuesToAdd: List[Map[TransportMode, Float]] = List(normVal, habitVal, neighbourhood.supportiveness)
 
     val intermediate: Map[TransportMode, Float] = valuesToAdd.reduce(_.unionWith(_)(_ + _))
@@ -110,7 +117,7 @@ class Agent(val subculture: Subculture,
 
     // Cycling or walking in bad weather yesterday, strengthens your resolve to do so again
     // Taking a non-active mode weakens your resolve
-    val resolve = if (!changeInWeather && (habit == Cycle || habit == Walk)) {
+    val resolve = if (!changeInWeather && (lastMode == Cycle || lastMode == Walk)) {
       0.1f
     } else if (!changeInWeather) {
       -0.1f
