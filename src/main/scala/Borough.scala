@@ -58,7 +58,7 @@ class Borough (val id: String,
     for(i <- 1 to totalYears * 365 if weekday(i)) {
       println(s"[$id] Day: $i")
 
-      // Get hte weather from the weatherPattern
+      // Get the weather from the weatherPattern
       val newWeather = weatherPattern(i)
 
       // For each resident choose their transport mode
@@ -238,7 +238,7 @@ class Borough (val id: String,
     * @param n The minimum number of links an agent should have
     * @param network The network to link
     */
-  def linkAgents(agents: Iterable[Agent], n: Int, network: Agent => mutable.Set[Agent]): Unit = {
+  def linkAgents(agents: Traversable[Agent], n: Int, network: Agent => mutable.Set[Agent]): Unit = {
     var linkedAgents: mutable.HashSet[Agent] = mutable.HashSet()
 
     agents.foreach(agent => {

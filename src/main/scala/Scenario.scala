@@ -1,1 +1,1 @@
-class Scenario(val neighbourhoods: Set[Neighbourhood])
+case class Scenario(neighbourhoods: Set[Neighbourhood])
