@@ -135,7 +135,7 @@ class Borough (val id: String,
     val journeyType = chooseJourneyType()
 
     // Assign random floats from a U[0,1] distribution to weatherSensitivity, autonomy, and consistency
-    val weatherSensitivity = scala.util.Random.nextFloat()
+    val weatherSensitivity = 0.9f
     val autonomy = scala.util.Random.nextFloat()
     val consistency = scala.util.Random.nextFloat()
 
