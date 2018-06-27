@@ -3,9 +3,9 @@ import java.time.Instant
 import output.Charts
 
 object Simulation {
-  val totalYears = 1
+  val totalYears = 3
   val numberOfPeople = 30000
-  val numberOfSimulationsPerScenario = 5
+  val numberOfSimulationsPerScenario = 4
   val socialConnectivity = 0.7f
   val subcultureConnectivity = 0.5f
   val neighbourConnectivity = 0.3f

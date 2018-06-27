@@ -1,7 +1,6 @@
 import scalaz._
 import Scalaz._
 
-import scala.annotation.tailrec
 import scala.collection.mutable
 /*
  Could psychological variables use a random value from a normal distribution mean = 1, s.d. = 0.25,
@@ -106,14 +105,6 @@ class Agent(val subculture: Subculture,
     lastMode = currentMode
     val lastModeMap: Map[TransportMode, Float] = Map(lastMode -> averageWeight)
     habit = lastModeMap.unionWith(habit.mapValues(_ * (1 - averageWeight)))(_ + _)
-    val normVal: Map[TransportMode, Float] = Map (norm -> autonomy)
-
-    val habitVal: Map[TransportMode, Float] = habit.mapValues(_ * consistency)
-
-    val valuesToAdd: List[Map[TransportMode, Float]] = List(normVal, habitVal, neighbourhood.supportiveness)
-
-    val intermediate: Map[TransportMode, Float] = valuesToAdd.reduce(_.unionWith(_)(_ + _))
-    val effort = perceivedEffort(commuteLength).map { case (k, v) => (k, 1.0f - v) }
 
     // Cycling or walking in bad weather yesterday, strengthens your resolve to do so again
     // Taking a non-active mode weakens your resolve
@@ -126,13 +117,22 @@ class Agent(val subculture: Subculture,
     }
 
     val weatherModifier: Map[TransportMode, Float] = Map(
-      Cycle -> (1.0f - weatherSensitivity + resolve),
-      Walk -> (1.0f - weatherSensitivity + resolve),
+      Cycle -> (if (weather == Bad) 1.0f - weatherSensitivity + resolve else 1.0f),
+      Walk ->  (if (weather == Bad) 1.0f - weatherSensitivity + resolve else 1.0f),
       Car -> 1.0f,
       PublicTransport -> 1.0f
     )
 
-    val valuesToMultiply: List[Map[TransportMode, Float]] = if (weather == Good) List(intermediate, effort) else List(intermediate, weatherModifier, effort)
+    val normVal: Map[TransportMode, Float] = Map (norm -> autonomy).intersectWith(weatherModifier)(_ * _)
+
+    val habitVal: Map[TransportMode, Float] = habit.mapValues(_ * consistency)
+
+    val valuesToAdd: List[Map[TransportMode, Float]] = List(normVal, habitVal, neighbourhood.supportiveness)
+
+    val intermediate: Map[TransportMode, Float] = valuesToAdd.reduce(_.unionWith(_)(_ + _))
+    val effort = perceivedEffort(commuteLength).map { case (k, v) => (k, 1.0f - v) }
+
+    val valuesToMultiply: List[Map[TransportMode, Float]] = List(intermediate, effort)
 
     currentMode =
       valuesToMultiply
