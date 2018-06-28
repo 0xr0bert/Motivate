@@ -3,7 +3,7 @@ import java.time.Instant
 import output.Charts
 
 object Simulation {
-  val totalYears = 3
+  val totalYears = 1
   val numberOfPeople = 30000
   val numberOfSimulationsPerScenario = 4
   val socialConnectivity = 0.7f
