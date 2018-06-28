@@ -83,8 +83,6 @@ class Agent(val subculture: Subculture,
   }
 
   def calculateCost(weather: Weather, changeInWeather: Boolean): Map[TransportMode, Float] = {
-    // TODO: How to fit weather in here
-
     val valuesToAverage = List(commuteLength.cost, neighbourhood.supportiveness.mapValues(v => 1.0f - v))
     // Find the average
     var intermediate = valuesToAverage
@@ -154,9 +152,9 @@ class Agent(val subculture: Subculture,
   def choose(weather: Weather, changeInWeather: Boolean): Unit = {
     val budget: Map[TransportMode, Float] = calculateModeBudget()
     val cost: Map[TransportMode, Float] = calculateCost(weather, changeInWeather)
-//    if (weather == Bad && budget.maxBy(_._2)._1 == Cycle) {
-//      print("BREAK")
-//    }
+    if (weather == Bad && budget.maxBy(_._2)._1 == Cycle) {
+      print("")
+    }
     currentMode =
       budget
         .filter(pair => pair._2 >= cost(pair._1))
