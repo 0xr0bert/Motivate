@@ -245,11 +245,15 @@ class Borough (val id: String,
           network(agent).add(linkedAgent)
           network(linkedAgent).add(agent)
         }
+        linkedAgents.add(agent)
       } else {
-        val totalDegree = linkedAgents.map(a => network(a).size).sum
+        val totalDegree = linkedAgents.map(a => network(a).size).sum.toFloat
         val probabilities: java.util.List[Pair[Agent, java.lang.Double]] =
           linkedAgents
-            .map(a => new Pair[Agent, java.lang.Double](a, java.lang.Double.valueOf(network(a).size / totalDegree)))
+            .map(a => {
+              val weight = network(a).size.toFloat / totalDegree
+              new Pair[Agent, java.lang.Double](a, java.lang.Double.valueOf(weight))
+            })
             .toList
             .asJava
 
