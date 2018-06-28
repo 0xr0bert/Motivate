@@ -55,6 +55,7 @@ class Agent(val subculture: Subculture,
   var neighbours: mutable.Set[Agent] = mutable.Set()
 
   def calculateModeBudget(): Map[TransportMode, Float] = {
+    // TODO: This creates very high values for the preferred mode, and very low for all others
     val socialVals = countInSubgroup(socialNetwork).mapValues(_ * socialConnectivity)
     val neighbourVals = countInSubgroup(neighbours).mapValues(_ * neighbourhoodConnectivity)
     val valuesToAverage = List(socialVals, neighbourVals, subculture.desirability.mapValues(_ * subcultureConnectivity), habit)
@@ -83,30 +84,35 @@ class Agent(val subculture: Subculture,
 
   def calculateCost(weather: Weather, changeInWeather: Boolean): Map[TransportMode, Float] = {
     // TODO: How to fit weather in here
-//    // Cycling or walking in bad weather yesterday, strengthens your resolve to do so again
-//    // Taking a non-active mode weakens your resolve
-//    val resolve = if (!changeInWeather && (lastMode == Cycle || lastMode == Walk)) {
-//      -0.1f
-//    } else if (!changeInWeather) {
-//      0.1f
-//    } else {
-//      0.0f
-//    }
-//
-//    val weatherModifier: Map[TransportMode, Float] = Map(
-//      Cycle -> (if (weather == Bad) weatherSensitivity * resolve else 1.0f),
-//      Walk ->  (if (weather == Bad) weatherSensitivity + resolve else 1.0f),
-//      Car -> 1.0f,
-//      PublicTransport -> 1.0f
-//    )
 
     val valuesToAverage = List(commuteLength.cost, neighbourhood.supportiveness.mapValues(v => 1.0f - v))
     // Find the average
-    val intermediate = valuesToAverage
+    var intermediate = valuesToAverage
       .reduce(
         _.unionWith(_)(_ + _)
       )
       .mapValues(_ / valuesToAverage.size)
+
+    if (weather == Bad) {
+      // Cycling or walking in bad weather yesterday, strengthens your resolve to do so again, therefore reducing the cost
+      // Taking a non-active mode weakens your resolve, therefore increasing the cost
+      val resolve = if (!changeInWeather && (lastMode == Cycle || lastMode == Walk)) {
+        0.1f
+      } else if (!changeInWeather) {
+        -0.1f
+      } else {
+        0.0f
+      }
+
+      intermediate = Map(
+        Cycle -> (intermediate(Cycle) * ((1.0f + weatherSensitivity) + resolve)),
+
+        Walk -> (intermediate(Walk) * ((1.0f + weatherSensitivity) + resolve)),
+
+        Car -> intermediate(Car),
+        PublicTransport -> intermediate(PublicTransport)
+      )
+    }
 
     // Make it so the the min mode has a at most a cost of 1, therefore at least one mode is always possible
     val intermediate_min = intermediate
@@ -148,6 +154,9 @@ class Agent(val subculture: Subculture,
   def choose(weather: Weather, changeInWeather: Boolean): Unit = {
     val budget: Map[TransportMode, Float] = calculateModeBudget()
     val cost: Map[TransportMode, Float] = calculateCost(weather, changeInWeather)
+//    if (weather == Bad && budget.maxBy(_._2)._1 == Cycle) {
+//      print("BREAK")
+//    }
     currentMode =
       budget
         .filter(pair => pair._2 >= cost(pair._1))

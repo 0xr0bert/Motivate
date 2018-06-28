@@ -81,7 +81,11 @@ object Charts {
     val chart = generateXYLineChart(dataset, graphTitle, xHeader, yHeader)
     // Bound the graph by the data with a margin
     val range = new XYShapeRenderer().findRangeBounds(dataset)
-    chart.getXYPlot.getRangeAxis.setRangeWithMargins(range)
+    try {
+      chart.getXYPlot.getRangeAxis.setRangeWithMargins(range)
+    } catch {
+      case e: IllegalArgumentException =>
+    }
 
     // Save the graph as a JPEG
     val width = 1280
