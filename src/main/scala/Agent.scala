@@ -47,6 +47,7 @@ class Agent(val subculture: Subculture,
             val neighbourhoodConnectivity: Float,
             val averageWeight: Float,
             var habit: Map[TransportMode, Float],
+            var modeBudget: Map[TransportMode, Float],
             var currentMode: TransportMode,
             var lastMode: TransportMode,
             var norm: TransportMode
@@ -71,7 +72,7 @@ class Agent(val subculture: Subculture,
   def updateNorm(): Unit = {
     val socialVals = countInSubgroup(socialNetwork, socialConnectivity * suggestibility)
     val neighbourVals = countInSubgroup(neighbours, neighbourhoodConnectivity * suggestibility)
-    val subcultureVals = subculture.desirability.map { case(k, v) => (k, v * subcultureConnectivity * suggestibility)}
+    val subcultureVals = subculture.desirability.mapValues(_ * subcultureConnectivity * suggestibility)
     val normVals: Map[TransportMode, Float] = Map(norm -> autonomy)
     val habitVals: Map[TransportMode, Float] = habit.mapValues(_ * consistency)
     val valuesToAdd: List[Map[TransportMode, Float]] =
@@ -82,6 +83,39 @@ class Agent(val subculture: Subculture,
       .maxBy(_._2) // find the max tuple by value
       ._1 // Get the key
   }
+
+  def updateModeBudget(): Unit = {
+    val socialVals = countInSubgroup(socialNetwork).mapValues(_ * socialConnectivity)
+    val neighbourVals = countInSubgroup(neighbours).mapValues(_ * neighbourhoodConnectivity)
+    val valuesToAdd = List(socialVals, neighbourVals, subculture.desirability.mapValues(_ * subcultureConnectivity), habit)
+
+    // Find the average
+    val intermediate = valuesToAdd
+        .reduce(
+          _.unionWith(_)(_ + _)
+        )
+        .mapValues(_ / valuesToAdd.size)
+
+    // Make it so the the max mode has a budget of 1, therefore at least one mode is always possible
+    val weight = 1.0f / intermediate
+      .maxBy(_._2)
+      ._2
+
+    modeBudget = intermediate
+      .mapValues(_ * weight)
+  }
+
+  def calculateCost(): Unit = {
+
+  }
+
+  /**
+    * Calculates the percentages for each different travel mode in a group of agents, multiplied by some weight
+    * @param v an iterable of agents
+    * @return a Map of TransportModes to weighted percentages
+    */
+  private def countInSubgroup(v: Traversable[Agent]): Map[TransportMode, Float] =
+    v.groupBy(_.lastMode).mapValues(_.size / v.size)
 
   /**
     * Calculates the percentages for each different travel mode in a group of agents, multiplied by some weight
