@@ -89,9 +89,8 @@ class Agent(val subculture: Subculture,
     * @param weight the weight to multiply by
     * @return a Map of TransportModes to weighted percentages
     */
-
-  private def countInSubgroup(v: Traversable[Agent]): Map[TransportMode, Float] =
-    v.groupBy(_.lastMode).mapValues(_.size.toFloat / v.size.toFloat)
+  private def countInSubgroup(v: Traversable[Agent], weight: Float): Map[TransportMode, Float] =
+    v.groupBy(_.lastMode).mapValues(_.size * weight / v.size)
 
   /**
     * Choose a new mode of travel
