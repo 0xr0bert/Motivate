@@ -127,7 +127,7 @@ class Agent(val subculture: Subculture,
     * @return a Map of TransportModes to weighted percentages
     */
   private def countInSubgroup(v: Traversable[Agent]): Map[TransportMode, Float] =
-    v.groupBy(_.lastMode).mapValues(_.size / v.size)
+    v.groupBy(_.lastMode).mapValues(_.size.toFloat / v.size.toFloat)
 
 
   def updateHabit(): Unit = {
