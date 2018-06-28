@@ -61,13 +61,11 @@ class Borough (val id: String,
       // Get the weather from the weatherPattern
       val newWeather = weatherPattern(i)
 
+      residents.foreach(_.updateHabit())
       // For each resident choose their transport mode
       residents.foreach(_.choose(newWeather, weather != newWeather))
 
       weather = newWeather
-
-      // For each resident, update their norm
-      residents.foreach(_.updateNorm())
 
       // Count the number of active commutes, and write them to the csv file
       val stats = countStats()

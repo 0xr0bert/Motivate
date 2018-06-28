@@ -47,7 +47,6 @@ class Agent(val subculture: Subculture,
             val neighbourhoodConnectivity: Float,
             val averageWeight: Float,
             var habit: Map[TransportMode, Float],
-            var modeBudget: Map[TransportMode, Float],
             var currentMode: TransportMode,
             var lastMode: TransportMode,
             var norm: TransportMode
@@ -55,58 +54,71 @@ class Agent(val subculture: Subculture,
   var socialNetwork: mutable.Set[Agent] = mutable.Set()
   var neighbours: mutable.Set[Agent] = mutable.Set()
 
-  /**
-    * Updates the norm of the agent
-    *
-    * Uses the following function
-    * maximise:
-    * v * socialNetwork + w * neighbours + x * subcultureDesirability + y * norm + z * habit + neighbourhoodSupportiveness
-    *
-    * where:
-    * v = socialConnectivity * suggestibility
-    * w = neighbourhoodConnectivity * suggestibility
-    * x = subcultureConnectivity * suggestibility
-    * y = adherence
-    * z = consistency
-    */
-  def updateNorm(): Unit = {
-    val socialVals = countInSubgroup(socialNetwork, socialConnectivity * suggestibility)
-    val neighbourVals = countInSubgroup(neighbours, neighbourhoodConnectivity * suggestibility)
-    val subcultureVals = subculture.desirability.mapValues(_ * subcultureConnectivity * suggestibility)
-    val normVals: Map[TransportMode, Float] = Map(norm -> autonomy)
-    val habitVals: Map[TransportMode, Float] = habit.mapValues(_ * consistency)
-    val valuesToAdd: List[Map[TransportMode, Float]] =
-      List(socialVals, neighbourVals, subcultureVals,normVals, habitVals, neighbourhood.supportiveness)
-
-    norm = valuesToAdd
-      .reduce(_.unionWith(_)(_ + _)) // Add together vals with same key
-      .maxBy(_._2) // find the max tuple by value
-      ._1 // Get the key
-  }
-
-  def updateModeBudget(): Unit = {
+  def calculateModeBudget(): Map[TransportMode, Float] = {
     val socialVals = countInSubgroup(socialNetwork).mapValues(_ * socialConnectivity)
     val neighbourVals = countInSubgroup(neighbours).mapValues(_ * neighbourhoodConnectivity)
-    val valuesToAdd = List(socialVals, neighbourVals, subculture.desirability.mapValues(_ * subcultureConnectivity), habit)
+    val valuesToAverage = List(socialVals, neighbourVals, subculture.desirability.mapValues(_ * subcultureConnectivity), habit)
 
     // Find the average
-    val intermediate = valuesToAdd
+    val intermediate = valuesToAverage
         .reduce(
           _.unionWith(_)(_ + _)
         )
-        .mapValues(_ / valuesToAdd.size)
+        .mapValues(_ / valuesToAverage.size)
 
     // Make it so the the max mode has a budget of 1, therefore at least one mode is always possible
     val weight = 1.0f / intermediate
       .maxBy(_._2)
       ._2
 
-    modeBudget = intermediate
+    val budget = intermediate
       .mapValues(_ * weight)
+
+    norm = budget
+      .maxBy(_._2)
+      ._1
+
+    budget
   }
 
-  def calculateCost(): Unit = {
+  def calculateCost(weather: Weather, changeInWeather: Boolean): Map[TransportMode, Float] = {
+    // TODO: How to fit weather in here
+//    // Cycling or walking in bad weather yesterday, strengthens your resolve to do so again
+//    // Taking a non-active mode weakens your resolve
+//    val resolve = if (!changeInWeather && (lastMode == Cycle || lastMode == Walk)) {
+//      -0.1f
+//    } else if (!changeInWeather) {
+//      0.1f
+//    } else {
+//      0.0f
+//    }
+//
+//    val weatherModifier: Map[TransportMode, Float] = Map(
+//      Cycle -> (if (weather == Bad) weatherSensitivity * resolve else 1.0f),
+//      Walk ->  (if (weather == Bad) weatherSensitivity + resolve else 1.0f),
+//      Car -> 1.0f,
+//      PublicTransport -> 1.0f
+//    )
 
+    val valuesToAverage = List(commuteLength.cost, neighbourhood.supportiveness.mapValues(v => 1.0f - v))
+    // Find the average
+    val intermediate = valuesToAverage
+      .reduce(
+        _.unionWith(_)(_ + _)
+      )
+      .mapValues(_ / valuesToAverage.size)
+
+    // Make it so the the min mode has a at most a cost of 1, therefore at least one mode is always possible
+    val intermediate_min = intermediate
+      .minBy(_._2)
+      ._2
+
+    if (intermediate_min > 1.0f) {
+      val weight = 1.0f / intermediate_min
+      intermediate.mapValues(_ * weight)
+    } else {
+      intermediate
+    }
   }
 
   /**
@@ -117,14 +129,12 @@ class Agent(val subculture: Subculture,
   private def countInSubgroup(v: Traversable[Agent]): Map[TransportMode, Float] =
     v.groupBy(_.lastMode).mapValues(_.size / v.size)
 
-  /**
-    * Calculates the percentages for each different travel mode in a group of agents, multiplied by some weight
-    * @param v an iterable of agents
-    * @param weight the weight to multiply by
-    * @return a Map of TransportModes to weighted percentages
-    */
-  private def countInSubgroup(v: Traversable[Agent], weight: Float): Map[TransportMode, Float] =
-    v.groupBy(_.lastMode).mapValues(_.size * weight / v.size)
+
+  def updateHabit(): Unit = {
+    lastMode = currentMode
+    val lastModeMap: Map[TransportMode, Float] = Map(lastMode -> averageWeight)
+    habit = lastModeMap.unionWith(habit.mapValues(_ * (1 - averageWeight)))(_ + _)
+  }
 
   /**
     * Choose a new mode of travel
@@ -136,42 +146,13 @@ class Agent(val subculture: Subculture,
     * @param changeInWeather whether there has been a change in the weather
     */
   def choose(weather: Weather, changeInWeather: Boolean): Unit = {
-    lastMode = currentMode
-    val lastModeMap: Map[TransportMode, Float] = Map(lastMode -> averageWeight)
-    habit = lastModeMap.unionWith(habit.mapValues(_ * (1 - averageWeight)))(_ + _)
-
-    // Cycling or walking in bad weather yesterday, strengthens your resolve to do so again
-    // Taking a non-active mode weakens your resolve
-    val resolve = if (!changeInWeather && (lastMode == Cycle || lastMode == Walk)) {
-      0.1f
-    } else if (!changeInWeather) {
-      -0.1f
-    } else {
-      0.0f
-    }
-
-    val weatherModifier: Map[TransportMode, Float] = Map(
-      Cycle -> (if (weather == Bad) 1.0f - weatherSensitivity + resolve else 1.0f),
-      Walk ->  (if (weather == Bad) 1.0f - weatherSensitivity + resolve else 1.0f),
-      Car -> 1.0f,
-      PublicTransport -> 1.0f
-    )
-
-    val normVal: Map[TransportMode, Float] = Map (norm -> autonomy).intersectWith(weatherModifier)(_ * _)
-
-    val habitVal: Map[TransportMode, Float] = habit.mapValues(_ * consistency)
-
-    val valuesToAdd: List[Map[TransportMode, Float]] = List(normVal, habitVal, neighbourhood.supportiveness)
-
-    val intermediate: Map[TransportMode, Float] = valuesToAdd.reduce(_.unionWith(_)(_ + _))
-    val effort = perceivedEffort(commuteLength).map { case (k, v) => (k, 1.0f - v) }
-
-    val valuesToMultiply: List[Map[TransportMode, Float]] = List(intermediate, effort)
-
+    val budget: Map[TransportMode, Float] = calculateModeBudget()
+    val cost: Map[TransportMode, Float] = calculateCost(weather, changeInWeather)
     currentMode =
-      valuesToMultiply
-        .reduce(_.unionWith(_)(_ + _)) // Add together vals with same key
-        .maxBy(_._2) // find the max tuple by value
-        ._1 // Get the key
+      budget
+        .filter(pair => pair._2 >= cost(pair._1))
+        .map {case (k, v) => (k, v - cost(k))}
+        .maxBy(_._2)
+        ._1
   }
 }
