@@ -11,6 +11,7 @@ use rand::distributions;
 use rand::distributions::Distribution;
 use rand::{thread_rng};
 use std::rc::Rc;
+use std::sync::Arc;
 use std::cell::RefCell;
 use std::hash::Hash;
 use std::hash::Hasher;
@@ -26,9 +27,9 @@ use subculture::Subculture;
 use scenario::Scenario;
 use agent::Agent;
 
-pub struct Borough<'b> {
+pub struct Borough {
     pub id: String,
-    pub scenario: &'b Scenario,
+    pub scenario: Scenario,
     pub total_years: u32,
     pub number_of_people: u32,
     pub social_connectivity: f32,
@@ -37,18 +38,17 @@ pub struct Borough<'b> {
     pub number_of_social_network_links: u32,
     pub number_of_neighbour_links: u32,
     pub days_in_habit_average: u32,
-    pub weather_pattern: &'b HashMap<u32, Weather>,
-    pub residents: Vec<Rc<RefCell<Agent>>>
+    pub weather_pattern: HashMap<u32, Weather>
 }
 
-impl<'b> Borough<'b> {
+impl Borough {
     pub fn run(&mut self) -> Result<(), io::Error>{
         let t0 = SystemTime::now()
             .duration_since(std::time::UNIX_EPOCH)
             .expect("Time went backwards")
             .as_secs();
-
-        self.set_up();
+        let mut residents: Vec<Rc<RefCell<Agent>>> = Vec::new();
+        self.set_up(&mut residents);
         let t1 = SystemTime::now()
             .duration_since(std::time::UNIX_EPOCH)
             .expect("Time went backwards")
@@ -62,7 +62,7 @@ impl<'b> Borough<'b> {
 
         let mut weather = self.weather_pattern.get(&0).unwrap();
 
-        let first_stats = self.count_stats();
+        let first_stats = self.count_stats(&residents);
 
         file.write_all(format!("0,{},{},{},{},{}\n",
                                first_stats.0,
@@ -77,16 +77,16 @@ impl<'b> Borough<'b> {
                 println!("[{}] Day: {}", self.id, i);
 
                 let new_weather = self.weather_pattern.get(&i).unwrap();
-                for resident in self.residents.iter_mut() {
+                for resident in residents.iter_mut() {
                     resident.borrow_mut().choose(new_weather, weather != new_weather);
                 }
                 weather = new_weather;
 
-                for resident in self.residents.iter_mut() {
+                for resident in residents.iter_mut() {
                     resident.borrow_mut().update_norm();
                 }
 
-                let stats = self.count_stats();
+                let stats = self.count_stats(&residents);
                 file.write_all(format!("0,{},{},{},{},{}\n",
                                        stats.0,
                                        stats.1,
@@ -109,20 +109,20 @@ impl<'b> Borough<'b> {
 
     }
 
-    fn set_up(&mut self) {
+    fn set_up(&mut self, residents: &mut Vec<Rc<RefCell<Agent>>>) {
         for _ in 0..self.number_of_people {
             let agent: Agent = self.create_unlinked_agent();
-            self.residents.push(Rc::new(RefCell::new(agent)));
+            residents.push(Rc::new(RefCell::new(agent)));
         }
 
-        self.link_agents_to_social_network(&self.residents, self.number_of_social_network_links);
+        self.link_agents_to_social_network(residents, self.number_of_social_network_links);
 
-        let neighbourhood_residents: HashMap<Rc<Neighbourhood>, Vec<Rc<RefCell<Agent>>>> = self.residents
+        let neighbourhood_residents: HashMap<u8, Vec<Rc<RefCell<Agent>>>> = residents
             .iter()
-            .map(|x| (x.borrow().neighbourhood.clone(), x.clone()))
+            .map(|x| (x.borrow().neighbourhood.id, x.clone()))
             .into_group_map();
 
-        for (k, v) in neighbourhood_residents {
+        for (_, v) in neighbourhood_residents {
             self.link_agents_to_neighbours(&v, self.number_of_neighbour_links);
         }
 
@@ -161,8 +161,8 @@ impl<'b> Borough<'b> {
         let suggestibility = random_normal(1.0, 0.25);
 
         let current_mode: TransportMode = self.choose_initial_norm_and_habit(
-            subculture.clone(), self.subculture_connectivity, suggestibility,
-            commute_length, &perceived_effort, neighbourhood.clone()
+            &subculture, self.subculture_connectivity, suggestibility,
+            commute_length, &perceived_effort, &neighbourhood
         );
         let norm = current_mode;
         let last_mode = current_mode;
@@ -189,19 +189,19 @@ impl<'b> Borough<'b> {
         }
     }
 
-    fn choose_subculture(&self) -> Rc<Subculture> {
-        let mut weighted: Vec<distributions::Weighted<Rc<Subculture>>> = self.scenario.subcultures
+    fn choose_subculture(&self) -> Arc<Subculture> {
+        let mut weighted: Vec<distributions::Weighted<Arc<Subculture>>> = self.scenario.subcultures
             .iter()
-            .map(|s: &Rc<Subculture>| distributions::Weighted {weight: 1, item: Rc::clone(s)})
+            .map(|s: &Arc<Subculture>| distributions::Weighted {weight: 1, item: Arc::clone(s)})
             .collect();
         let weighted_choice = distributions::WeightedChoice::new(&mut weighted);
         weighted_choice.sample(&mut thread_rng())
     }
 
-    fn choose_neighbourhood(&self) -> Rc<Neighbourhood> {
-        let mut weighted: Vec<distributions::Weighted<Rc<Neighbourhood>>> = self.scenario.neighbourhoods
+    fn choose_neighbourhood(&self) -> Arc<Neighbourhood> {
+        let mut weighted: Vec<distributions::Weighted<Arc<Neighbourhood>>> = self.scenario.neighbourhoods
             .iter()
-            .map(|s: &Rc<Neighbourhood>| distributions::Weighted {weight: 1, item: Rc::clone(s)})
+            .map(|s: &Arc<Neighbourhood>| distributions::Weighted {weight: 1, item: Arc::clone(s)})
             .collect();
         let weighted_choice = distributions::WeightedChoice::new(&mut weighted);
         weighted_choice.sample(&mut thread_rng())
@@ -219,12 +219,12 @@ impl<'b> Borough<'b> {
     }
 
     fn choose_initial_norm_and_habit(&self,
-                                     subculture: Rc<Subculture>,
+                                     subculture: &Arc<Subculture>,
                                      subculture_connectivity: f32,
                                      suggestibility: f32,
                                      commute_length: JourneyType,
                                      perceived_effort: &HashMap<JourneyType, HashMap<TransportMode, f32>>,
-                                     neighbourhood: Rc<Neighbourhood>
+                                     neighbourhood: &Arc<Neighbourhood>
     ) -> TransportMode {
         let subculture_weight = subculture_connectivity * suggestibility;
         let subculture_desirability_weighted: HashMap<TransportMode, f32> = subculture
@@ -277,7 +277,7 @@ impl<'b> Borough<'b> {
                     rc.borrow_mut().social_network.push(friend.clone());
                 }
             }
-            linked_agents.push(rc.clone())
+            linked_agents.push(rc.clone());
         }
     }
 
@@ -308,11 +308,11 @@ impl<'b> Borough<'b> {
         }
     }
 
-    fn count_stats(&self) -> (usize, usize, usize, usize) {
-        (self.residents.iter().filter(|&a| a.borrow().current_mode == TransportMode::Walk || a.borrow().current_mode == TransportMode::Cycle).count(),
-         self.residents.iter().filter(|&a| (a.borrow().current_mode == TransportMode::Walk || a.borrow().current_mode == TransportMode::Cycle) && (a.borrow().norm != TransportMode::Walk && a.borrow().norm != TransportMode::Cycle)).count(),
-         self.residents.iter().filter(|&a| (a.borrow().current_mode != TransportMode::Walk && a.borrow().current_mode != TransportMode::Cycle) && (a.borrow().norm == TransportMode::Walk || a.borrow().norm == TransportMode::Cycle)).count(),
-         self.residents.iter().filter(|&a| a.borrow().norm == TransportMode::Walk || a.borrow().norm == TransportMode::Cycle).count()
+    fn count_stats(&self, residents: &Vec<Rc<RefCell<Agent>>>) -> (usize, usize, usize, usize) {
+        (residents.iter().filter(|&a| a.borrow().current_mode == TransportMode::Walk || a.borrow().current_mode == TransportMode::Cycle).count(),
+         residents.iter().filter(|&a| (a.borrow().current_mode == TransportMode::Walk || a.borrow().current_mode == TransportMode::Cycle) && (a.borrow().norm != TransportMode::Walk && a.borrow().norm != TransportMode::Cycle)).count(),
+         residents.iter().filter(|&a| (a.borrow().current_mode != TransportMode::Walk && a.borrow().current_mode != TransportMode::Cycle) && (a.borrow().norm == TransportMode::Walk || a.borrow().norm == TransportMode::Cycle)).count(),
+         residents.iter().filter(|&a| a.borrow().norm == TransportMode::Walk || a.borrow().norm == TransportMode::Cycle).count()
         )
     }
 }

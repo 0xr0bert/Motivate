@@ -8,6 +8,7 @@ use rand::distributions;
 use rand::distributions::Distribution;
 use rand::{thread_rng};
 use std::rc::Rc;
+use std::sync::Arc;
 use std::cell::RefCell;
 use std::hash::Hash;
 use std::hash::Hasher;
@@ -24,8 +25,8 @@ use scenario::Scenario;
 
 #[derive(PartialEq)]
 pub struct Agent {
-    pub subculture: Rc<Subculture>,
-    pub neighbourhood: Rc<Neighbourhood>,
+    pub subculture: Arc<Subculture>,
+    pub neighbourhood: Arc<Neighbourhood>,
     pub commute_length: JourneyType,
     pub perceived_effort: HashMap<JourneyType, HashMap<TransportMode, f32>>,
     pub weather_sensitivity: f32,

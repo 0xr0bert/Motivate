@@ -24,6 +24,7 @@ use rand::distributions;
 use rand::distributions::Distribution;
 use rand::{thread_rng};
 use std::rc::Rc;
+use std::sync::Arc;
 use std::cell::RefCell;
 use std::hash::Hash;
 use std::hash::Hasher;
@@ -59,7 +60,7 @@ fn main() {
         Scenario {
             id: String::from("pre intervention"),
             subcultures: vec![
-                Rc::new(Subculture {
+                Arc::new(Subculture {
                     desirability: hashmap!{
                         TransportMode::Car => 0.8f32,
                         TransportMode::PublicTransport => 0.5f32,
@@ -67,7 +68,7 @@ fn main() {
                         TransportMode::Walk => 0.7f32
                     }
                 }),
-                Rc::new(Subculture {
+                Arc::new(Subculture {
                     desirability: hashmap!{
                         TransportMode::Car => 0.9f32,
                         TransportMode::PublicTransport => 0.8f32,
@@ -75,7 +76,7 @@ fn main() {
                         TransportMode::Walk => 0.7f32
                     }
                 }),
-                Rc::new(Subculture {
+                Arc::new(Subculture {
                     desirability: hashmap!{
                         TransportMode::Car => 0.4f32,
                         TransportMode::PublicTransport => 0.5f32,
@@ -85,7 +86,7 @@ fn main() {
                 })
             ],
             neighbourhoods: vec!(
-                Rc::new(Neighbourhood{
+                Arc::new(Neighbourhood{
                     id: 0,
                     supportiveness: hashmap!{
                         TransportMode::Car => 0.9f32,
@@ -94,7 +95,7 @@ fn main() {
                         TransportMode::PublicTransport => 0.9f32
                     }
                 }),
-                Rc::new(Neighbourhood{
+                Arc::new(Neighbourhood{
                     id: 1,
                     supportiveness: hashmap!{
                         TransportMode::Car => 0.5f32,
@@ -103,7 +104,7 @@ fn main() {
                         TransportMode::PublicTransport => 1.0f32
                     }
                 }),
-                Rc::new(Neighbourhood{
+                Arc::new(Neighbourhood{
                     id: 2,
                     supportiveness: hashmap!{
                         TransportMode::Car => 0.9f32,
@@ -112,7 +113,7 @@ fn main() {
                         TransportMode::PublicTransport => 0.5f32
                     }
                 }),
-                Rc::new(Neighbourhood{
+                Arc::new(Neighbourhood{
                     id: 3,
                     supportiveness: hashmap!{
                         TransportMode::Car => 0.2f32,
@@ -126,7 +127,7 @@ fn main() {
         Scenario {
             id: String::from("post intervention"),
             subcultures: vec![
-                Rc::new(Subculture {
+                Arc::new(Subculture {
                     desirability: hashmap!{
                         TransportMode::Car => 0.8f32,
                         TransportMode::PublicTransport => 0.5f32,
@@ -134,7 +135,7 @@ fn main() {
                         TransportMode::Walk => 0.7f32
                     }
                 }),
-                Rc::new(Subculture {
+                Arc::new(Subculture {
                     desirability: hashmap!{
                         TransportMode::Car => 0.9f32,
                         TransportMode::PublicTransport => 0.8f32,
@@ -142,7 +143,7 @@ fn main() {
                         TransportMode::Walk => 0.7f32
                     }
                 }),
-                Rc::new(Subculture {
+                Arc::new(Subculture {
                     desirability: hashmap!{
                         TransportMode::Car => 0.4f32,
                         TransportMode::PublicTransport => 0.5f32,
@@ -152,7 +153,7 @@ fn main() {
                 })
             ],
             neighbourhoods: vec!(
-                Rc::new(Neighbourhood{
+                Arc::new(Neighbourhood{
                     id: 0,
                     supportiveness: hashmap!{
                         TransportMode::Car => 0.9f32,
@@ -161,7 +162,7 @@ fn main() {
                         TransportMode::PublicTransport => 0.9f32
                     }
                 }),
-                Rc::new(Neighbourhood{
+                Arc::new(Neighbourhood{
                     id: 1,
                     supportiveness: hashmap!{
                         TransportMode::Car => 0.5f32,
@@ -170,7 +171,7 @@ fn main() {
                         TransportMode::PublicTransport => 1.0f32
                     }
                 }),
-                Rc::new(Neighbourhood{
+                Arc::new(Neighbourhood{
                     id: 4,
                     supportiveness: hashmap!{
                         TransportMode::Car => 0.7f32,
@@ -179,7 +180,7 @@ fn main() {
                         TransportMode::PublicTransport => 0.5f32
                     }
                 }),
-                Rc::new(Neighbourhood{
+                Arc::new(Neighbourhood{
                     id: 3,
                     supportiveness: hashmap!{
                         TransportMode::Car => 0.2f32,
@@ -193,6 +194,7 @@ fn main() {
     ];
 
     let mut weather_pattern: HashMap<u32, Weather> = HashMap::new();
+
 
     for i in 0..(total_years * 365) {
         let current_season = season(i);
@@ -211,7 +213,7 @@ fn main() {
             boroughs.push(
                 Borough {
                     id: String::from("".to_owned() + &scenario.id[..] + "-" + &i.to_string()),
-                    scenario,
+                    scenario: scenario.clone(),
                     total_years,
                     number_of_people,
                     social_connectivity,
@@ -220,8 +222,7 @@ fn main() {
                     number_of_social_network_links,
                     number_of_neighbour_links,
                     days_in_habit_average,
-                    weather_pattern: &weather_pattern,
-                    residents: Vec::new(),
+                    weather_pattern: weather_pattern.clone()
                 }
             );
         }
@@ -230,18 +231,21 @@ fn main() {
 //    for borough in boroughs.iter_mut() {
 //        borough.run();
 //    }
-    unsafe {
-        boroughs.get_unchecked_mut(0).run();
-    }
+//    unsafe {
+//        boroughs.get_unchecked_mut(0).run();
+//    }
 //    let mut thread_handles: Vec<JoinHandle<_>>  = Vec::new();
 //
 //    for borough in boroughs.iter_mut() {
-//        thread_handles.push(thread::spawn(|| borough.run()));
+//        thread_handles.push(thread::spawn(move || borough.run()));
 //    }
 //
 //    for thread in thread_handles {
 //        thread.join().unwrap();
-//    }
+////    }
+    boroughs.par_iter_mut().for_each(|b| match b.run() {
+        _ => ()
+    });
 
     let t1 = SystemTime::now()
         .duration_since(std::time::UNIX_EPOCH)

@@ -3,6 +3,7 @@ use std::hash::Hash;
 use std::hash::Hasher;
 use transport_mode::TransportMode;
 
+#[derive(Clone)]
 pub struct Neighbourhood {
     pub id: u8,
     pub supportiveness: HashMap<TransportMode, f32>
