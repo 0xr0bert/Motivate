@@ -13,6 +13,7 @@ mod subculture;
 mod scenario;
 mod agent;
 mod borough;
+mod union_with;
 
 use std::collections::HashMap;
 use std::time::SystemTime;

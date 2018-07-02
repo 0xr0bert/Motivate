@@ -20,6 +20,7 @@ use neighbourhood::Neighbourhood;
 use subculture::Subculture;
 use scenario::Scenario;
 use agent::Agent;
+use union_with::union_of;
 
 pub struct Borough {
     pub id: String,
@@ -241,12 +242,10 @@ impl Borough {
 
         values_to_multiply
             .into_iter()
-            .fold(HashMap::new(), |acc, x| x.iter().map(
-                |(k, &v)| (k, v * acc.get(k).unwrap_or(&1.0))
-            ).collect())
+            .fold(HashMap::new(), |acc, x| union_of(&acc, x, |v1, v2| v1 * v2))
             .into_iter()
             .fold((TransportMode::Walk, 0.0),
-                  |(k0, v0): (TransportMode, f32), (&k1, v1): (&TransportMode, f32)| if v1 > v0 {(k1, v1)} else {(k0, v0)})
+                  |(k0, v0): (TransportMode, f32), (k1, v1): (TransportMode, f32)| if v1 > v0 {(k1, v1)} else {(k0, v0)})
             .0
     }
 
