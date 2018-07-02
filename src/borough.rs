@@ -20,6 +20,7 @@ use neighbourhood::Neighbourhood;
 use subculture::Subculture;
 use scenario::Scenario;
 use agent::Agent;
+use union_with::union_of;
 
 pub struct Borough {
     pub id: String,
@@ -71,14 +72,15 @@ impl Borough {
                 println!("[{}] Day: {}", self.id, i);
 
                 let new_weather = self.weather_pattern.get(&i).unwrap();
+
+                for resident in residents.iter_mut() {
+                    resident.borrow_mut().update_habit();
+                }
+
                 for resident in residents.iter_mut() {
                     resident.borrow_mut().choose(new_weather, weather != new_weather);
                 }
                 weather = new_weather;
-
-                for resident in residents.iter_mut() {
-                    resident.borrow_mut().update_norm();
-                }
 
                 let stats = self.count_stats(&residents);
                 file.write_all(format!("0,{},{},{},{},{}\n",
@@ -148,7 +150,7 @@ impl Borough {
         let neighbourhood = self.choose_neighbourhood();
         let commute_length = self.choose_journey_type();
 
-        let weather_sensitivity = 0.9;
+        let weather_sensitivity = rand::random::<f32>();
         let autonomy = rand::random::<f32>();
         let consistency = rand::random::<f32>();
 
@@ -241,12 +243,10 @@ impl Borough {
 
         values_to_multiply
             .into_iter()
-            .fold(HashMap::new(), |acc, x| x.iter().map(
-                |(k, &v)| (k, v * acc.get(k).unwrap_or(&1.0))
-            ).collect())
+            .fold(HashMap::new(), |acc, x| union_of(&acc, x, |v1, v2| v1 * v2))
             .into_iter()
             .fold((TransportMode::Walk, 0.0),
-                  |(k0, v0): (TransportMode, f32), (&k1, v1): (&TransportMode, f32)| if v1 > v0 {(k1, v1)} else {(k0, v0)})
+                  |(k0, v0): (TransportMode, f32), (k1, v1): (TransportMode, f32)| if v1 > v0 {(k1, v1)} else {(k0, v0)})
             .0
     }
 
