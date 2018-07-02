@@ -7,6 +7,9 @@ pub enum Season {
 }
 
 impl Season {
+    /// The percentage of days for which there was bad weather
+    /// Based of Met Office data for Northolt https://www.metoffice.gov.uk/public/weather/climate/gcptq81bc#?tab=climateTables
+    /// Days in which there is over 1mm of rainfall
     pub fn percentage_bad_weather(&self) -> f32 {
         match *self {
             Season::Winter => 0.3455,
@@ -17,6 +20,7 @@ impl Season {
     }
 }
 
+/// Gets the season for a given day
 pub fn season(day: u32) -> Season {
     let day_in_year = day % 365;
     if day_in_year < 59 || (day_in_year >= 334 && day_in_year < 365) {

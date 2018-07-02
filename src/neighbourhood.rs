@@ -3,6 +3,9 @@ use std::hash::Hash;
 use std::hash::Hasher;
 use transport_mode::TransportMode;
 
+/// A Neighbourhood
+/// id: the ID for the Neighbourhood, neighbourhoods are equal if they share the same id
+/// supportiveness: A score from 0-1 for each transport mode, on how supportive the environment is
 #[derive(Clone)]
 pub struct Neighbourhood {
     pub id: u8,
