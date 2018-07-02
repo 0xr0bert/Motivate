@@ -1,27 +1,13 @@
 use std::collections::HashMap;
-use std::io::Write;
 use itertools::Itertools;
-use std::time::SystemTime;
-use std::fs;
-use std::io;
-use rand::distributions;
-use rand::distributions::Distribution;
-use rand::{thread_rng};
 use std::rc::Rc;
 use std::sync::Arc;
 use std::cell::RefCell;
-use std::hash::Hash;
-use std::hash::Hasher;
-use rayon::prelude::*;
-use std::thread::JoinHandle;
-use std::thread;
 use weather::Weather;
 use transport_mode::TransportMode;
-use season::{Season, season};
 use journey_type::JourneyType;
 use neighbourhood::Neighbourhood;
 use subculture::Subculture;
-use scenario::Scenario;
 
 #[derive(PartialEq)]
 pub struct Agent {

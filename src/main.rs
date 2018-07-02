@@ -15,27 +15,13 @@ mod agent;
 mod borough;
 
 use std::collections::HashMap;
-use std::io::Write;
-use itertools::Itertools;
 use std::time::SystemTime;
-use std::fs;
-use std::io;
-use rand::distributions;
-use rand::distributions::Distribution;
-use rand::{thread_rng};
-use std::rc::Rc;
 use std::sync::Arc;
-use std::cell::RefCell;
-use std::hash::Hash;
-use std::hash::Hasher;
 use rayon::prelude::*;
-use std::thread::JoinHandle;
-use std::thread;
 use borough::Borough;
 use weather::Weather;
 use transport_mode::TransportMode;
-use season::{Season, season};
-use journey_type::JourneyType;
+use season::season;
 use neighbourhood::Neighbourhood;
 use subculture::Subculture;
 use scenario::Scenario;
@@ -227,22 +213,6 @@ fn main() {
             );
         }
     }
-
-//    for borough in boroughs.iter_mut() {
-//        borough.run();
-//    }
-//    unsafe {
-//        boroughs.get_unchecked_mut(0).run();
-//    }
-//    let mut thread_handles: Vec<JoinHandle<_>>  = Vec::new();
-//
-//    for borough in boroughs.iter_mut() {
-//        thread_handles.push(thread::spawn(move || borough.run()));
-//    }
-//
-//    for thread in thread_handles {
-//        thread.join().unwrap();
-////    }
     boroughs.par_iter_mut().for_each(|b| match b.run() {
         _ => ()
     });
@@ -252,35 +222,4 @@ fn main() {
         .expect("Time went backwards")
         .as_secs();
     println!("TOTAL RUNNING TIME: {}s", t1 - t0)
-
-//    println!("Hello, world!");
-//    let x = Season::Winter.percentage_bad_weather();
-//    println!("{}", x);
 }
-
-//const SUBCULTURE_A: Subculture = Subculture {
-//    desirability: hashmap!{
-//        TransportMode::Car => 0.8,
-//        TransportMode::PublicTransport => 0.5,
-//        TransportMode::Cycle => 0.9,
-//        TransportMode::Walk => 0.7,
-//    }
-//};
-//
-//const SUBCULTURE_B: Subculture = Subculture {
-//    desirability: hashmap!{
-//        TransportMode::Car => 0.9,
-//        TransportMode::PublicTransport => 0.8,
-//        TransportMode::Cycle => 0.6,
-//        TransportMode::Walk => 0.7,
-//    }
-//};
-//
-//const SUBCULTURE_C: Subculture = Subculture {
-//    desirability: hashmap!{
-//        TransportMode::Car => 0.4,
-//        TransportMode::PublicTransport => 0.5,
-//        TransportMode::Cycle => 0.9,
-//        TransportMode::Walk => 0.9,
-//    }
-//};
