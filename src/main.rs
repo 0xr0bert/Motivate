@@ -15,6 +15,7 @@ mod scenario;
 mod agent;
 mod borough;
 mod union_with;
+mod social_network;
 
 use std::collections::HashMap;
 use std::time::SystemTime;
