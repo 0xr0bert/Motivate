@@ -313,7 +313,7 @@ impl Borough {
 }
 
 fn weekday(day: u32) -> bool {
-    day % 7 < 4
+    day % 7 < 5
 }
 fn bound(lower_bound: f32, upper_bound: f32, x: f32) -> f32 {
     upper_bound.min(lower_bound.max(x))
