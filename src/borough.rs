@@ -83,7 +83,8 @@ impl Borough {
                 weather = new_weather;
 
                 let stats = self.count_stats(&residents);
-                file.write_all(format!("0,{},{},{},{},{}\n",
+                file.write_all(format!("{},{},{},{},{},{}\n",
+                                       i,
                                        stats.0,
                                        stats.1,
                                        stats.2,
@@ -150,7 +151,7 @@ impl Borough {
         let neighbourhood = self.choose_neighbourhood();
         let commute_length = self.choose_journey_type();
 
-        let weather_sensitivity = rand::random::<f32>();
+        let weather_sensitivity = 0.9f32;
         let autonomy = rand::random::<f32>();
         let consistency = rand::random::<f32>();
 
