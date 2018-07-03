@@ -72,17 +72,19 @@ impl Borough {
                 println!("[{}] Day: {}", self.id, i);
 
                 let new_weather = self.weather_pattern.get(&i).unwrap();
+
+                for resident in residents.iter_mut() {
+                    resident.borrow_mut().update_habit();
+                }
+
                 for resident in residents.iter_mut() {
                     resident.borrow_mut().choose(new_weather, weather != new_weather);
                 }
                 weather = new_weather;
 
-                for resident in residents.iter_mut() {
-                    resident.borrow_mut().update_norm();
-                }
-
                 let stats = self.count_stats(&residents);
-                file.write_all(format!("0,{},{},{},{},{}\n",
+                file.write_all(format!("{},{},{},{},{},{}\n",
+                                       i,
                                        stats.0,
                                        stats.1,
                                        stats.2,
@@ -149,7 +151,7 @@ impl Borough {
         let neighbourhood = self.choose_neighbourhood();
         let commute_length = self.choose_journey_type();
 
-        let weather_sensitivity = 0.9;
+        let weather_sensitivity = 0.9f32;
         let autonomy = rand::random::<f32>();
         let consistency = rand::random::<f32>();
 
@@ -311,7 +313,7 @@ impl Borough {
 }
 
 fn weekday(day: u32) -> bool {
-    day % 7 < 4
+    day % 7 < 5
 }
 fn bound(lower_bound: f32, upper_bound: f32, x: f32) -> f32 {
     upper_bound.min(lower_bound.max(x))

@@ -1,5 +1,4 @@
 use std::sync::Arc;
-use std::borrow::Borrow;
 use subculture::Subculture;
 use neighbourhood::Neighbourhood;
 
