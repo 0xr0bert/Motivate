@@ -1,5 +1,6 @@
 extern crate itertools;
 #[macro_use] extern crate maplit;
+#[macro_use] extern crate log;
 extern crate im;
 extern crate rand;
 extern crate rayon;
@@ -180,8 +181,8 @@ fn main() {
         }
     ];
 
+    // Create a random weather pattern drawing from the percentage_bad_weather of each season
     let mut weather_pattern: HashMap<u32, Weather> = HashMap::new();
-
 
     for i in 0..(total_years * 365) {
         let current_season = season(i);
@@ -193,6 +194,7 @@ fn main() {
         }
     }
 
+    // Create the boroughs
     let mut boroughs: Vec<Borough> = Vec::new();
 
     for scenario in scenarios.iter() {
@@ -214,6 +216,7 @@ fn main() {
             );
         }
     }
+    // Run the simulation in parallel
     boroughs.par_iter_mut().for_each(|b| match b.run() {
         _ => ()
     });

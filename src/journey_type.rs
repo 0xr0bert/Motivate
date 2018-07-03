@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 use transport_mode::TransportMode;
 
+/// A categorical distance for commute
 #[derive(Eq, Hash, PartialEq, Copy, Clone)]
 pub enum JourneyType {
     LocalCommute,
@@ -9,6 +10,7 @@ pub enum JourneyType {
 }
 
 impl JourneyType {
+    /// Gets the cost for different TransportModes for the JourneyType
     pub fn cost(&self) -> HashMap<TransportMode, f32> {
         match *self {
             JourneyType::LocalCommute => hashmap!{
