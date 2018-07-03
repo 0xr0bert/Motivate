@@ -50,7 +50,7 @@ pub struct Borough {
 
 impl Borough {
     /// Run the simulation
-    pub fn run(&mut self) -> Result<(), io::Error>{
+    pub fn run(&mut self, network: HashMap<u32, Vec<u32>>) -> Result<(), io::Error>{
         // Used for monitoring running time
         let t0 = SystemTime::now()
             .duration_since(std::time::UNIX_EPOCH)
@@ -58,7 +58,7 @@ impl Borough {
             .as_secs();
 
         // Create the agents
-        let mut residents: Vec<Rc<RefCell<Agent>>> = self.set_up();
+        let mut residents: Vec<Rc<RefCell<Agent>>> = self.set_up(network);
 
         // Report the setup running time
         let t1 = SystemTime::now()
@@ -142,7 +142,7 @@ impl Borough {
     /// Rc are reference counter pointers, that are store immutable data,
     /// RefCells are immutable but have mutable contents
     /// Meaning that Agents are mutable
-    fn set_up(&mut self) -> Vec<Rc<RefCell<Agent>>> {
+    fn set_up(&mut self, network: HashMap<u32, Vec<u32>>) -> Vec<Rc<RefCell<Agent>>> {
         // Create an empty vec to store agents
         let mut residents: Vec<Rc<RefCell<Agent>>> = Vec::new();
         // Create self.number_of_people unlinked agents
@@ -152,7 +152,8 @@ impl Borough {
         }
 
         // Generate social network
-        self.link_agents_to_social_network(&residents, self.number_of_social_network_links);
+        // self.link_agents_to_social_network(&residents, self.number_of_social_network_links);
+        link_agents_from_predefined_network(&mut residents, network);
 
         // Group agents by neighbourhood
         let neighbourhood_residents: HashMap<u8, Vec<Rc<RefCell<Agent>>>> = residents
