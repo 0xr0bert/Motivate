@@ -345,6 +345,21 @@ impl Borough {
     }
 }
 
+fn link_agents_from_predefined_network(
+    agents: &mut [Rc<RefCell<Agent>>], network: HashMap<u32, Vec<u32>>)
+{
+    network
+        .iter()
+        .for_each(|(&k, v)| {
+            let mut friends: Vec<Rc<RefCell<Agent>>> = v
+                .iter()
+                .map(|&id| agents[id as usize].clone())
+                .collect();
+            agents[k as usize].borrow_mut().social_network.append(&mut friends);
+        })
+}
+
+
 /// Calculate whether a given day is a weekday
 /// day: The day number
 /// Returns: true iff day is a weekday
