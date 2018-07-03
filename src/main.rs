@@ -52,7 +52,7 @@ fn main() {
 
     if args.len() >= 2 {
         if &args[1] == "--generate" {
-            let numbers: Vec<u32> = (0..150000).collect();
+            let numbers: Vec<u32> = (0..number_of_people).collect();
             let networks: Vec<String> = numbers
                 .par_iter()
                 .map(|_| serde_yaml::to_string(&social_network::link_agents_to_social_network(
