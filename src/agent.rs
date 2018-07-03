@@ -41,6 +41,20 @@ impl Agent {
         let subculture_vals: HashMap<TransportMode, f32> = self.subculture.desirability.iter().map(
             |(&k, &v)| (k, v * self.subculture_connectivity)
         ).collect();
+
+        let values_to_add: Vec<&HashMap<TransportMode, f32>> =
+            vec![&social_vals, &neighbour_vals, &subculture_vals];
+
+        self.norm = values_to_add
+                .iter()
+                .fold(HashMap::new(), |acc, x|
+                    union_of(&acc, x, |v1, v2| v1 + v2)
+                )
+                .iter()
+                .fold((TransportMode::Walk, 0.0),
+                      |(k0, v0): (TransportMode, f32), (&k1, &v1): (&TransportMode, &f32)| if v1 > v0 { (k1, v1) } else { (k0, v0) })
+                .0;
+
         let habit_vals: HashMap<TransportMode, f32> = self.habit.iter().map(
             |(&k, &v)| (k, v)
         ).collect();
@@ -69,12 +83,12 @@ impl Agent {
             .into_iter()
             .map(|(k, v)| (k, v / max))
             .collect();
-
-        self.norm = budget
-            .iter()
-            .fold((TransportMode::Walk, 0.0),
-                  |(k0, v0): (TransportMode, f32), (&k1, &v1): (&TransportMode, &f32)| if v1 > v0 { (k1, v1) } else { (k0, v0) })
-            .0;
+        // 
+        // self.norm = budget
+        //     .iter()
+        //     .fold((TransportMode::Walk, 0.0),
+        //           |(k0, v0): (TransportMode, f32), (&k1, &v1): (&TransportMode, &f32)| if v1 > v0 { (k1, v1) } else { (k0, v0) })
+        //     .0;
 
         budget
     }
@@ -155,7 +169,7 @@ impl Agent {
     pub fn choose(&mut self, weather: &Weather, change_in_weather: bool) {
         let budget = self.calculate_mode_budget();
         let cost = self.calculate_cost(weather, change_in_weather);
-        self.current_mode = budget
+        let diff: HashMap<TransportMode, f32> = budget
             .iter()
             .filter_map(|(&k, &v)| {
                 let cost_val: f32 = *cost.get(&k).unwrap_or(&99999999.0f32);
@@ -165,6 +179,10 @@ impl Agent {
                     None
                 }
             })
+            .collect();
+        // println!("{}", diff.len());
+        self.current_mode = diff
+            .into_iter()
             .fold((TransportMode::Walk, 0.0),
                   |(k0, v0): (TransportMode, f32), (k1, v1): (TransportMode, f32)| if v1 > v0 { (k1, v1) } else { (k0, v0) })
             .0;
