@@ -1,6 +1,7 @@
 extern crate itertools;
 #[macro_use] extern crate maplit;
 #[macro_use] extern crate log;
+extern crate serde_yaml;
 extern crate im;
 extern crate rand;
 extern crate rayon;
@@ -20,6 +21,8 @@ mod social_network;
 use std::collections::HashMap;
 use std::time::SystemTime;
 use std::sync::Arc;
+use std::env;
+use std::io::Write;
 use rayon::prelude::*;
 use borough::Borough;
 use weather::Weather;
@@ -36,6 +39,7 @@ fn main() {
         .expect("Time went backwards")
         .as_secs();
 
+    let args: Vec<String> = env::args().collect();
     let total_years = 1;
     let number_of_people = 30000;
     let number_of_simulations_per_scenario = 4;
@@ -45,6 +49,30 @@ fn main() {
     let number_of_social_network_links = 10;
     let number_of_neighbour_links = 10;
     let days_in_habit_average = 30;
+
+    if args.len() >= 2 {
+        if &args[1] == "--generate" {
+            let numbers: Vec<u32> = (0..150000).collect();
+            let networks: Vec<String> = numbers
+                .par_iter()
+                .map(|_| serde_yaml::to_string(&social_network::link_agents_to_social_network(
+                    number_of_social_network_links, number_of_people)).unwrap())
+                .collect();
+
+            match std::fs::create_dir_all("networks") {
+                _ => ()
+            };
+            networks
+                .par_iter()
+                .enumerate()
+                .for_each(|(i, item)| {
+                    let mut file = std::fs::File::create(format!("networks/{}.yaml", i)).ok().unwrap();
+                    file.write_all(item.as_bytes()).ok();
+                });
+            println!("DONE")
+        }
+    }
+
     let scenarios: Vec<Scenario> = vec![
         Scenario {
             id: String::from("pre intervention"),
