@@ -15,7 +15,7 @@ mod neighbourhood;
 mod subculture;
 mod scenario;
 mod agent;
-mod borough;
+mod simulation;
 mod union_with;
 mod social_network;
 mod statistics;
@@ -28,7 +28,6 @@ use std::env;
 use std::io::Write;
 use std::io::prelude::*;
 use rayon::prelude::*;
-use borough::Borough;
 use weather::Weather;
 use transport_mode::TransportMode;
 use season::season;
@@ -234,35 +233,40 @@ fn main() {
         }
     }
 
-    // Create the boroughs
-    let mut boroughs: Vec<Borough> = Vec::new();
+    let mut scenario_and_thread_ids: Vec<(&Scenario, String)> = Vec::new();
 
     for scenario in scenarios.iter() {
         for i in 1..=number_of_simulations_per_scenario {
-            boroughs.push(
-                Borough {
-                    id: String::from("".to_owned() + &scenario.id[..] + "-" + &i.to_string()),
-                    scenario: scenario.clone(),
-                    total_years,
-                    number_of_people,
-                    social_connectivity,
-                    subculture_connectivity,
-                    neighbourhood_connectivity,
-                    number_of_social_network_links,
-                    number_of_neighbour_links,
-                    days_in_habit_average,
-                    weather_pattern: weather_pattern.clone()
-                }
-            );
+            scenario_and_thread_ids.push((scenario,
+                String::from("".to_owned() + &scenario.id[..] + "-" + &i.to_string())));
         }
     }
-    // Run the simulation in parallel
-    boroughs.par_iter_mut().for_each(|b| {
-        // Get the network number
-        let network_number: String = b.id.split("-").last().unwrap().to_owned();
+    println!("DEBUG: {}", scenario_and_thread_ids.len());
+
+    scenario_and_thread_ids.par_iter().for_each(|(scenario, thread_id)| {
+        let network_number: String = thread_id
+            .split("-")
+            .last()
+            .unwrap()
+            .to_owned();
         let file = File::open(format!("networks/{}.yaml", network_number))
             .expect("File cannot be opened");
-        b.run(read_network(file)).unwrap();
+
+        let network = read_network(file);
+        println!("{}", thread_id);
+
+        simulation::run(thread_id.to_string(),
+                     scenario,
+                     total_years,
+                     number_of_people,
+                     social_connectivity,
+                     subculture_connectivity,
+                     neighbourhood_connectivity,
+                     number_of_neighbour_links,
+                     days_in_habit_average,
+                     &weather_pattern,
+                     network)
+                     .unwrap();
     });
 
     let t1 = SystemTime::now()
