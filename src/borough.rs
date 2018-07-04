@@ -303,7 +303,7 @@ impl Borough {
         // Calculate the difference between the budget and the cost
         // Get the maximum key-value pair (by value)
         // Set the current_mode equal to the key
-        initial_budget
+        let initial_budget_diff: HashMap<TransportMode, f32> = initial_budget
             .iter()
             .filter_map(|(&k, &v)| {
                 let cost_val: f32 = *initial_cost.get(&k).unwrap_or(&9999.0f32);
@@ -313,6 +313,19 @@ impl Borough {
                     None
                 }
             })
+            .collect();
+
+        if commute_length != JourneyType::DistantCommute && subculture.id == "Subculture B" {
+            info!("budget diff: cycle {}; walk {}; car {}; public {}",
+                initial_budget_diff.get(&TransportMode::Cycle).unwrap(),
+                initial_budget_diff.get(&TransportMode::Walk).unwrap(),
+                initial_budget_diff.get(&TransportMode::Car).unwrap(),
+                initial_budget_diff.get(&TransportMode::PublicTransport).unwrap()
+            );
+        }
+
+        initial_budget_diff
+            .into_iter()
             .fold((TransportMode::Walk, -0.1),
                   |(k0, v0): (TransportMode, f32), (k1, v1): (TransportMode, f32)| if v1 > v0 { (k1, v1) } else { (k0, v0) })
             .0

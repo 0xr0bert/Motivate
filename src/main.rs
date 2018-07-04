@@ -1,6 +1,7 @@
 extern crate itertools;
 #[macro_use] extern crate maplit;
 #[macro_use] extern crate log;
+extern crate simple_logger;
 extern crate serde_yaml;
 extern crate im;
 extern crate rand;
@@ -37,6 +38,7 @@ use scenario::Scenario;
 
 
 fn main() {
+    simple_logger::init().unwrap();
     let t0 = SystemTime::now()
         .duration_since(std::time::UNIX_EPOCH)
         .expect("Time went backwards")
