@@ -241,23 +241,85 @@ impl Borough {
                                      neighbourhood: &Arc<Neighbourhood>
     ) -> TransportMode {
         let subculture_weight = subculture_connectivity;
-        let subculture_desirability_weighted: HashMap<TransportMode, f32> = subculture
+        let mut initial_budget: HashMap<TransportMode, f32> = subculture
             .desirability
             .iter()
             .map(|(&k, v)|(k, v * subculture_weight))
             .collect();
 
-        let values_to_multiply: Vec<&HashMap<TransportMode, f32>> =
-            vec![&subculture_desirability_weighted,
-                 &neighbourhood.supportiveness];
+        // Find the key-value-pair in initial_budger with the highest value, and store the value
+        let max: f32 = initial_budget
+            .iter()
+            .fold((TransportMode::Walk, -0.1),
+                  |(k0, v0): (TransportMode, f32), (&k1, &v1): (&TransportMode, &f32)| if v1 > v0 { (k1, v1) } else { (k0, v0) })
+            .1;
 
-        values_to_multiply
+        // Make it so the the max mode has a budget of 1, therefore at least one mode is always possible
+        initial_budget = initial_budget
             .into_iter()
-            .fold(HashMap::new(), |acc, x| union_of(&acc, x, |v1, v2| v1 * v2))
+            .map(|(k, v)| (k, v / max))
+            .collect();
+
+        let commute_length_cost = commute_length.cost();
+
+        // Take the supportiveness for each mode, away from 1, so a lower supportiveness = higher cost
+        let neighbourhood_vals: HashMap<TransportMode, f32> = neighbourhood
+            .supportiveness
+            .iter()
+            .map(|(&k, v)| (k, 1.0f32 - v))
+            .collect();
+
+        let values_to_average: Vec<&HashMap<TransportMode, f32>> =
+            vec![&neighbourhood_vals,
+                 &commute_length_cost];
+
+        let mut initial_cost: HashMap<TransportMode, f32> = values_to_average
+            .iter()
+            .fold(HashMap::new(), |acc, x|
+                union_of(&acc, x, |v1, v2| v1 + v2)
+            )
             .into_iter()
-            .fold((TransportMode::Walk, 0.0),
-                  |(k0, v0): (TransportMode, f32), (k1, v1): (TransportMode, f32)| if v1 > v0 {(k1, v1)} else {(k0, v0)})
+            .map(|(k, v)| (k, v / (values_to_average.len() as f32)))
+            .collect();
+
+        // Find the minimum key-value pair of initial_cost and get its value
+        let min = initial_cost
+            .iter()
+            .fold((TransportMode::Car, 9.99999999f32),
+                  |(k0, v0): (TransportMode, f32), (&k1, &v1): (&TransportMode, &f32)| if v1 < v0 { (k1, v1) } else { (k0, v0) })
+            .1;
+
+        // If the minimum is greater than 1
+        // Divide all the data by the minimum so that at least one mode has a cost of 1, so that a
+        // mode is always possible
+        if min > 1.0 {
+            initial_cost = initial_cost
+                .into_iter()
+                .map(|(k, v)| (k, v / min))
+                .collect();
+        };
+
+        // Filter out values where the budget is not greater than or equal to the cost
+        // Calculate the difference between the budget and the cost
+        // Get the maximum key-value pair (by value)
+        // Set the current_mode equal to the key
+        initial_budget
+            .iter()
+            .filter_map(|(&k, &v)| {
+                let cost_val: f32 = *initial_cost.get(&k).unwrap_or(&9999.0f32);
+                if v >= cost_val {
+                    Some((k, v - cost_val))
+                } else {
+                    None
+                }
+            })
+            .fold((TransportMode::Walk, -0.1),
+                  |(k0, v0): (TransportMode, f32), (k1, v1): (TransportMode, f32)| if v1 > v0 { (k1, v1) } else { (k0, v0) })
             .0
+
+        // if initial_mode == TransportMode::Cycle && commute_length == JourneyType::Cycle {
+        //     println("{}", initial_cost.get(&TransportMode::Cycle).unwrap());
+        // }
     }
 
     /// Link agents to a social network

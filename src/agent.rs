@@ -60,7 +60,7 @@ impl Agent {
                     union_of(&acc, x, |v1, v2| v1 + v2)
                 )
                 .iter()
-                .fold((TransportMode::Walk, 0.0),
+                .fold((TransportMode::Walk, -0.1),
                       |(k0, v0): (TransportMode, f32), (&k1, &v1): (&TransportMode, &f32)| if v1 > v0 { (k1, v1) } else { (k0, v0) })
                 .0;
 
@@ -86,7 +86,7 @@ impl Agent {
         // Find the key-value-pair in average with the highest value, and store the value
         let max: f32 = average
             .iter()
-            .fold((TransportMode::Walk, 0.0),
+            .fold((TransportMode::Walk, -0.1),
                   |(k0, v0): (TransportMode, f32), (&k1, &v1): (&TransportMode, &f32)| if v1 > v0 { (k1, v1) } else { (k0, v0) })
             .1;
 
@@ -218,7 +218,7 @@ impl Agent {
                     None
                 }
             })
-            .fold((TransportMode::Walk, 0.0),
+            .fold((TransportMode::Walk, -0.1),
                   |(k0, v0): (TransportMode, f32), (k1, v1): (TransportMode, f32)| if v1 > v0 { (k1, v1) } else { (k0, v0) })
             .0;
     }

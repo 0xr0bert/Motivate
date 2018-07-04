@@ -28,8 +28,8 @@ impl JourneyType {
             JourneyType::DistantCommute => hashmap!{
                 TransportMode::Car => 0.1f32,
                 TransportMode::PublicTransport => 0.1f32,
-                TransportMode::Cycle => 1.1f32,
-                TransportMode::Walk => 1.1f32
+                TransportMode::Cycle => 99999.0f32,
+                TransportMode::Walk => 99999.0f32
             }
         }
     }
