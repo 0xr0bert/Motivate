@@ -80,6 +80,7 @@ fn main() {
             id: String::from("pre intervention"),
             subcultures: vec![
                 Arc::new(Subculture {
+                    id: "Subculture A".to_owned(),
                     desirability: hashmap!{
                         TransportMode::Car => 0.8f32,
                         TransportMode::PublicTransport => 0.5f32,
@@ -88,6 +89,7 @@ fn main() {
                     }
                 }),
                 Arc::new(Subculture {
+                    id: "Subculture B".to_owned(),
                     desirability: hashmap!{
                         TransportMode::Car => 0.9f32,
                         TransportMode::PublicTransport => 0.8f32,
@@ -96,6 +98,7 @@ fn main() {
                     }
                 }),
                 Arc::new(Subculture {
+                    id: "Subculture C".to_owned(),
                     desirability: hashmap!{
                         TransportMode::Car => 0.4f32,
                         TransportMode::PublicTransport => 0.5f32,
@@ -147,6 +150,7 @@ fn main() {
             id: String::from("post intervention"),
             subcultures: vec![
                 Arc::new(Subculture {
+                    id: "Subculture A".to_owned(),
                     desirability: hashmap!{
                         TransportMode::Car => 0.8f32,
                         TransportMode::PublicTransport => 0.5f32,
@@ -155,6 +159,7 @@ fn main() {
                     }
                 }),
                 Arc::new(Subculture {
+                    id: "Subculture B".to_owned(),
                     desirability: hashmap!{
                         TransportMode::Car => 0.9f32,
                         TransportMode::PublicTransport => 0.8f32,
@@ -163,6 +168,7 @@ fn main() {
                     }
                 }),
                 Arc::new(Subculture {
+                    id: "Subculture C".to_owned(),
                     desirability: hashmap!{
                         TransportMode::Car => 0.4f32,
                         TransportMode::PublicTransport => 0.5f32,
@@ -269,10 +275,6 @@ fn read_network(mut file: File) -> HashMap<u32, Vec<u32>> {
     file.read_to_string(&mut file_contents)
         .expect("There was an error reading the file");
 
-    let return_val: HashMap<u32, Vec<u32>> = serde_yaml::from_slice(file_contents.as_bytes())
-        .expect("There was an error parsing the file");
-
-    println!("READ");
-
-    return_val
+    serde_yaml::from_slice(file_contents.as_bytes())
+        .expect("There was an error parsing the file")
 }
