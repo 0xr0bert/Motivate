@@ -255,7 +255,7 @@ impl Borough {
                                      commute_length: JourneyType,
                                      neighbourhood: &Arc<Neighbourhood>
     ) -> TransportMode {
-        let subculture_weight = subculture_connectivity * suggestibility;
+        let subculture_weight = subculture_connectivity;
         let subculture_desirability_weighted: HashMap<TransportMode, f32> = subculture
             .desirability
             .iter()

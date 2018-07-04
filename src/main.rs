@@ -17,6 +17,7 @@ mod agent;
 mod borough;
 mod union_with;
 mod social_network;
+mod statistics;
 
 use std::fs::File;
 use std::collections::HashMap;
