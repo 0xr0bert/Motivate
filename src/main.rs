@@ -68,7 +68,7 @@ fn main() {
                 .par_iter()
                 .enumerate()
                 .for_each(|(i, item)| {
-                    let mut file = std::fs::File::create(format!("networks/{}.yaml", i)).ok().unwrap();
+                    let mut file = std::fs::File::create(format!("networks/{}.yaml", i+1)).ok().unwrap();
                     file.write_all(item.as_bytes()).ok();
                 });
             println!("DONE")
