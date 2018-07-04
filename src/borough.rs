@@ -20,6 +20,7 @@ use neighbourhood::Neighbourhood;
 use subculture::Subculture;
 use scenario::Scenario;
 use agent::Agent;
+use statistics;
 use union_with::union_of;
 
 /// A single borough that will run the simulation
@@ -72,31 +73,23 @@ impl Borough {
 
         // Create the output file, and write the header to it
         let mut file = fs::File::create(format!("output/output_{}.csv", self.id))?;
-        file.write_all(b"Day,ActiveMode,ActiveModeCounterToInactiveNorm,InactiveModeCounterToActiveNorm,ActiveNorm,Rain\n")?;
+        file.write_all(generate_csv_header(&self.scenario).as_bytes())?;
 
         // Get the weather at day 0
         let mut weather = self.weather_pattern.get(&0).unwrap();
 
         // Write the first set of statistics to the file
-        let first_stats = count_stats(&residents);
-
-        file.write_all(format!("0,{},{},{},{},{}\n",
-                               first_stats.0,
-                               first_stats.1,
-                               first_stats.2,
-                               first_stats.3,
-                               if weather == &Weather::Good {0} else {1})
-            .as_bytes())?;
+        file.write_all(generate_csv_output(0, &weather, &self.scenario, &residents).as_bytes())?;
 
         // For each day in the simulation
-        for i in 1..self.total_years * 365 {
+        for day in 1..self.total_years * 365 {
             // Only consider weekdays
-            if weekday(i) {
+            if weekday(day) {
                 // Log the day to the terminal
-                println!("[{}] Day: {}", self.id, i);
+                println!("[{}] Day: {}", self.id, day);
 
                 // Get the new weather
-                let new_weather = self.weather_pattern.get(&i).unwrap();
+                let new_weather = self.weather_pattern.get(&day).unwrap();
 
                 // For each resident update the habit
                 for resident in residents.iter_mut() {
@@ -112,15 +105,7 @@ impl Borough {
                 weather = new_weather;
 
                 // Log the stats to the file
-                let stats = count_stats(&residents);
-                file.write_all(format!("{},{},{},{},{},{}\n",
-                                       i,
-                                       stats.0,
-                                       stats.1,
-                                       stats.2,
-                                       stats.3,
-                                       if weather == &Weather::Good { 0 } else { 1 })
-                    .as_bytes())?;
+                file.write_all(generate_csv_output(day, &weather, &self.scenario, &residents).as_bytes())?;
             }
         }
 
@@ -156,9 +141,9 @@ impl Borough {
         link_agents_from_predefined_network(&mut residents, network);
 
         // Group agents by neighbourhood
-        let neighbourhood_residents: HashMap<u8, Vec<Rc<RefCell<Agent>>>> = residents
+        let neighbourhood_residents: HashMap<String, Vec<Rc<RefCell<Agent>>>> = residents
             .iter()
-            .map(|x| (x.borrow().neighbourhood.id, x.clone()))
+            .map(|x| (x.borrow().neighbourhood.id.clone(), x.clone()))
             .into_group_map();
 
         // For each neighbourhood create a social network
@@ -309,6 +294,79 @@ impl Borough {
             println!("[{}] Neighbour Network Size: {}", self.id, linked_agents.len());
         }
     }
+}
+
+/// Generate the header for the csv file
+/// scenario: The scenario for this simulation
+/// Returns: The header for the csv file
+fn generate_csv_header(scenario: &Scenario) -> String {
+    let subculture_ids: Vec<String> = scenario
+        .subcultures
+        .iter()
+        .map(|subculture| subculture.id.clone())
+        .collect();
+
+    let neighbourhood_ids: Vec<String> = scenario
+        .neighbourhoods
+        .iter()
+        .map(|neighbourhood| neighbourhood.id.clone())
+        .collect();
+
+    format!(
+        "Day,Rain,ActiveMode,ActiveNorm,ActiveModeCounterToInactiveNorm,InactiveModeCounterToActiveNorm,LocalCommute,CityCommute,DistantCommute,{},{}\n",
+        subculture_ids.join(","),
+        neighbourhood_ids.join(",")
+    )
+}
+
+fn generate_csv_output(day: u32, weather: &Weather, scenario: &Scenario,agents: &[Rc<RefCell<Agent>>]) -> String {
+    let rain = if weather == &Weather::Good { 0 } else { 1 };
+
+    let active_mode = statistics::count_active_mode(agents);
+    let active_norm = statistics::count_active_norm(agents);
+    let active_mode_counter_to_inactive_norm =
+        statistics::count_active_mode_counter_to_inactive_norm(agents);
+
+    let inactive_mode_counter_to_active_norm =
+        statistics::count_inactive_mode_counter_to_active_norm(agents);
+
+    let active_mode_by_commute_length = statistics::count_active_mode_by_commute_length(agents);
+    let local_commute = active_mode_by_commute_length.get(&JourneyType::LocalCommute).unwrap();
+    let city_commute = active_mode_by_commute_length.get(&JourneyType::CityCommute).unwrap();
+    let distant_commute = active_mode_by_commute_length.get(&JourneyType::DistantCommute).unwrap();
+
+    let active_mode_by_subculture =
+        statistics::count_active_mode_by_subculture(agents);
+
+    let active_mode_by_subculture_in_correct_order: Vec<String> = scenario
+        .subcultures
+        .iter()
+        .map(|subculture| active_mode_by_subculture.get(subculture).unwrap_or(&0usize).to_string())
+        .collect();
+
+    let active_mode_by_neighbourhood =
+        statistics::count_active_mode_by_neighbourhood(agents);
+
+    let active_mode_by_neighbourhood_in_correct_order: Vec<String> = scenario
+        .neighbourhoods
+        .iter()
+        .map(|neighbourhood| active_mode_by_neighbourhood.get(neighbourhood).unwrap_or(&0usize).to_string())
+        .collect();
+
+    format!(
+        "{},{},{},{},{},{},{},{},{},{},{}\n",
+        day,
+        rain,
+        active_mode,
+        active_norm,
+        active_mode_counter_to_inactive_norm,
+        inactive_mode_counter_to_active_norm,
+        local_commute,
+        city_commute,
+        distant_commute,
+        active_mode_by_subculture_in_correct_order.join(","),
+        active_mode_by_neighbourhood_in_correct_order.join(",")
+    )
 }
 
 /// Link agents to a predefined social network

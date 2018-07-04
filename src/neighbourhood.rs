@@ -7,7 +7,7 @@ use transport_mode::TransportMode;
 #[derive(Clone)]
 pub struct Neighbourhood {
     /// The ID for the Neighbourhood, neighbourhoods are equal if they share the same id
-    pub id: u8,
+    pub id: String,
     /// A score from 0-1 for each transport mode, on how supportive the environment is
     pub supportiveness: HashMap<TransportMode, f32>
 }

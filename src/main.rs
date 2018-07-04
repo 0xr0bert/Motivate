@@ -110,7 +110,7 @@ fn main() {
             ],
             neighbourhoods: vec!(
                 Arc::new(Neighbourhood{
-                    id: 0,
+                    id: "0".to_owned(),
                     supportiveness: hashmap!{
                         TransportMode::Car => 0.9f32,
                         TransportMode::Cycle => 0.7f32,
@@ -119,7 +119,7 @@ fn main() {
                     }
                 }),
                 Arc::new(Neighbourhood{
-                    id: 1,
+                    id: "1".to_owned(),
                     supportiveness: hashmap!{
                         TransportMode::Car => 0.5f32,
                         TransportMode::Cycle => 0.7f32,
@@ -128,7 +128,7 @@ fn main() {
                     }
                 }),
                 Arc::new(Neighbourhood{
-                    id: 2,
+                    id: "2".to_owned(),
                     supportiveness: hashmap!{
                         TransportMode::Car => 0.9f32,
                         TransportMode::Cycle => 0.2f32,
@@ -137,7 +137,7 @@ fn main() {
                     }
                 }),
                 Arc::new(Neighbourhood{
-                    id: 3,
+                    id: "3".to_owned(),
                     supportiveness: hashmap!{
                         TransportMode::Car => 0.2f32,
                         TransportMode::Cycle => 0.9f32,
@@ -180,7 +180,7 @@ fn main() {
             ],
             neighbourhoods: vec!(
                 Arc::new(Neighbourhood{
-                    id: 0,
+                    id: "0".to_owned(),
                     supportiveness: hashmap!{
                         TransportMode::Car => 0.9f32,
                         TransportMode::Cycle => 0.7f32,
@@ -189,7 +189,7 @@ fn main() {
                     }
                 }),
                 Arc::new(Neighbourhood{
-                    id: 1,
+                    id: "1".to_owned(),
                     supportiveness: hashmap!{
                         TransportMode::Car => 0.5f32,
                         TransportMode::Cycle => 0.7f32,
@@ -198,7 +198,7 @@ fn main() {
                     }
                 }),
                 Arc::new(Neighbourhood{
-                    id: 4,
+                    id: "4".to_owned(),
                     supportiveness: hashmap!{
                         TransportMode::Car => 0.7f32,
                         TransportMode::Cycle => 0.8f32,
@@ -207,7 +207,7 @@ fn main() {
                     }
                 }),
                 Arc::new(Neighbourhood{
-                    id: 3,
+                    id: "3".to_owned(),
                     supportiveness: hashmap!{
                         TransportMode::Car => 0.2f32,
                         TransportMode::Cycle => 0.9f32,
