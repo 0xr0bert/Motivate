@@ -8,7 +8,7 @@ use std::collections::HashMap;
 /// agents: a slice of agents
 /// min: the minimum number of links
 /// total_number: the number of nodes in the network
-pub fn link_agents_to_social_network(min: u32, total_number: u32) -> HashMap<u32, Vec<u32>>{
+pub fn generate_social_network(min: u32, total_number: u32) -> HashMap<u32, Vec<u32>>{
     let mut  network: HashMap<u32, Vec<u32>> = HashMap::new();
 
     for i in 0..total_number {

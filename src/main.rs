@@ -18,11 +18,13 @@ mod borough;
 mod union_with;
 mod social_network;
 
+use std::fs::File;
 use std::collections::HashMap;
 use std::time::SystemTime;
 use std::sync::Arc;
 use std::env;
 use std::io::Write;
+use std::io::prelude::*;
 use rayon::prelude::*;
 use borough::Borough;
 use weather::Weather;
@@ -52,10 +54,10 @@ fn main() {
 
     if args.len() >= 2 {
         if &args[1] == "--generate" {
-            let numbers: Vec<u32> = (0..number_of_people).collect();
+            let numbers: Vec<u32> = (0..number_of_simulations_per_scenario).collect();
             let networks: Vec<String> = numbers
                 .par_iter()
-                .map(|_| serde_yaml::to_string(&social_network::link_agents_to_social_network(
+                .map(|_| serde_yaml::to_string(&social_network::generate_social_network(
                     number_of_social_network_links, number_of_people)).unwrap())
                 .collect();
 
@@ -246,8 +248,12 @@ fn main() {
         }
     }
     // Run the simulation in parallel
-    boroughs.par_iter_mut().for_each(|b| match b.run() {
-        _ => ()
+    boroughs.par_iter_mut().for_each(|b| {
+        // Get the network number
+        let network_number: String = b.id.split("-").last().unwrap().to_owned();
+        let file = File::open(format!("networks/{}.yaml", network_number))
+            .expect("File cannot be opened");
+        b.run(read_network(file)).unwrap();
     });
 
     let t1 = SystemTime::now()
@@ -255,4 +261,18 @@ fn main() {
         .expect("Time went backwards")
         .as_secs();
     println!("TOTAL RUNNING TIME: {}s", t1 - t0)
+}
+
+fn read_network(mut file: File) -> HashMap<u32, Vec<u32>> {
+    println!("READING");
+    let mut file_contents = String::new();
+    file.read_to_string(&mut file_contents)
+        .expect("There was an error reading the file");
+
+    let return_val: HashMap<u32, Vec<u32>> = serde_yaml::from_slice(file_contents.as_bytes())
+        .expect("There was an error parsing the file");
+
+    println!("READ");
+
+    return_val
 }
