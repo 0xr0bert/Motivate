@@ -35,37 +35,63 @@ use neighbourhood::Neighbourhood;
 use subculture::Subculture;
 use scenario::Scenario;
 
-
+/// This is the entry point for the application
 fn main() {
+    // Create a new logger for system output
     simple_logger::init().unwrap();
+
+    // Used for monitoring running time
     let t0 = SystemTime::now()
         .duration_since(std::time::UNIX_EPOCH)
         .expect("Time went backwards")
         .as_secs();
 
+    // Get the system arguments
     let args: Vec<String> = env::args().collect();
+
+    ///////////////////////////////////////////////
+    //           Model Parameters               ///
+    ///////////////////////////////////////////////
+    
+    // Total number of years the simulation runs for
     let total_years = 1;
+    // The number of people in the simulation
     let number_of_people = 30000;
+    // The number of simulations that should take place per scenario
     let number_of_simulations_per_scenario = 4;
+    // How connected an agent is to their social network
     let social_connectivity = 0.7f32;
+    // How connected an agent is to their subculture
     let subculture_connectivity = 0.5f32;
+    // How connected an agent is to their neighbourhood
     let neighbourhood_connectivity = 0.3f32;
+    // The minimum number of links in their social network, and agent should have.
+    // This is the mean number of social network links / 2
     let number_of_social_network_links = 10;
+    // The minimum number of links in the neighbourhood-wide social network, an agent should have
+    // This is the mean number of links / 2
     let number_of_neighbour_links = 10;
+    // This is used as a weighting for the habit average, the most recent n days, account
+    // for approximately 86% of the average
     let days_in_habit_average = 30;
 
+    // If the generate flag is used
     if args.len() >= 2 {
         if &args[1] == "--generate" {
+            // Generate as many social networks as number of simulations per scenario
             let numbers: Vec<u32> = (0..number_of_simulations_per_scenario).collect();
+            // Get the networks stored as a YAML file
             let networks: Vec<String> = numbers
                 .par_iter()
                 .map(|_| serde_yaml::to_string(&social_network::generate_social_network(
                     number_of_social_network_links, number_of_people)).unwrap())
                 .collect();
 
-            match std::fs::create_dir_all("networks") {
-                _ => ()
-            };
+            // Create a networks directory to store them in
+            std::fs::create_dir_all("networks")
+                .expect("Failed to create networks directory");
+
+            // For each network, save the network to a file
             networks
                 .par_iter()
                 .enumerate()
@@ -77,6 +103,10 @@ fn main() {
         }
     }
 
+    
+    ///////////////////////////////////////////////
+    //            Model Scenarios               ///
+    ///////////////////////////////////////////////
     let scenarios: Vec<Scenario> = vec![
         Scenario {
             id: String::from("pre intervention"),
@@ -233,6 +263,7 @@ fn main() {
         }
     }
 
+    // Store a list of tuples of scenarios, and thread IDs
     let mut scenario_and_thread_ids: Vec<(&Scenario, String)> = Vec::new();
 
     for scenario in scenarios.iter() {
@@ -242,7 +273,9 @@ fn main() {
         }
     }
 
+    // Run in parallel the simulations
     scenario_and_thread_ids.par_iter().for_each(|(scenario, thread_id)| {
+        // Get the network number and load the network
         let network_number: String = thread_id
             .split("-")
             .last()
@@ -267,6 +300,8 @@ fn main() {
                      .unwrap();
     });
 
+    // Output the running time
+
     let t1 = SystemTime::now()
         .duration_since(std::time::UNIX_EPOCH)
         .expect("Time went backwards")
@@ -274,8 +309,11 @@ fn main() {
     info!("TOTAL RUNNING TIME: {}s", t1 - t0)
 }
 
+/// Read a social network from a file
+/// file: An input file in YAML mapping ids to a list of ids
+/// Returns: A HashMap mapping ids, to the ids of their friends
 fn read_network(mut file: File) -> HashMap<u32, Vec<u32>> {
-    debug!("READING NETWORK");
+    info!("READING NETWORK");
     let mut file_contents = String::new();
     file.read_to_string(&mut file_contents)
         .expect("There was an error reading the file");

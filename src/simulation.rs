@@ -23,33 +23,17 @@ use agent::Agent;
 use statistics;
 use union_with::union_of;
 
-// /// A single borough that will run the simulation
-// pub struct Borough {
-//     /// The borough's id, used in the output file
-//     pub id: String,
-//     /// The scenario for the simulation
-//     pub scenario: Scenario,
-//     /// The number of years to run the simulation for
-//     pub total_years: u32,
-//     /// The total number of people in the simulation
-//     pub number_of_people: u32,
-//     /// How connected an agent should be to its social network
-//     pub social_connectivity: f32,
-//     /// How connected an agent should be to its subculture
-//     pub subculture_connectivity: f32,
-//     /// How connected an agent should be to its neighbourhood
-//     pub neighbourhood_connectivity: f32,
-//     /// The minimum number of links in the social network
-//     pub number_of_social_network_links: u32,
-//     /// The minimum number of links in the neighbourhood
-//     pub number_of_neighbour_links: u32,
-//     /// The number of days that account for approximately 86% of the habit average
-//     pub days_in_habit_average: u32,
-//     /// The weather pattern
-//     pub weather_pattern: HashMap<u32, Weather>
-// }
-
 /// Run the simulation
+/// scenario: The scenario of the simulation
+/// number_of_people: The number of agents to generate
+/// social_connectivity: How connected the agent is to its social network
+/// subculture_connectivity: How connected the agent is to its subculture
+/// neighbourhood_connectivity: How connected the agent is to its neighbourhood
+/// number_of_neighbour_links: The minimum number of links each agent should have in the neighbourhood network
+/// days_in_habit_average: How many days should be used in the habit average
+/// weather_pattern: A HashMap from day number to Weather
+/// network: The social network
+/// Returns: Result, nothing if successful, io:Error if output could not be written
 pub fn run(id: String,
            scenario: &Scenario,
            total_years: u32,
@@ -139,6 +123,15 @@ pub fn run(id: String,
 /// Rc are reference counter pointers, that are store immutable data,
 /// RefCells are immutable but have mutable contents
 /// Meaning that Agents are mutable
+/// scenario: The scenario of the simulation
+/// social_connectivity: How connected the agent is to its social network
+/// subculture_connectivity: How connected the agent is to its subculture
+/// neighbourhood_connectivity: How connected the agent is to its neighbourhood
+/// days_in_habit_average: How many days should be used in the habit average
+/// number_of_neighbour_links: The minimum number of links each agent should have in the neighbourhood network
+/// number_of_people: The number of agents to generate
+/// network: The social network
+/// Returns: The created agents
 fn set_up(scenario: &Scenario,
           social_connectivity: f32,
           subculture_connectivity: f32,
@@ -177,6 +170,12 @@ fn set_up(scenario: &Scenario,
 }
 
 /// Create an unlinked agent
+/// scenario: The scenario of the simulation
+/// social_connectivity: How connected the agent is to its social network
+/// subculture_connectivity: How connected the agent is to its subculture
+/// neighbourhood_connectivity: How connected the agent is to its neighbourhood
+/// days_in_habit_average: How many days should be used in the habit average
+/// Returns: The created agent
 fn create_unlinked_agent(scenario: &Scenario,
                          social_connectivity: f32,
                          subculture_connectivity: f32,
@@ -225,6 +224,7 @@ fn create_unlinked_agent(scenario: &Scenario,
 }
 
 /// Choose a random JourneyType, equal chance of each
+/// Returns: The chosen JourneyType
 fn choose_journey_type() -> JourneyType {
     let x = rand::random::<f32>();
     if x <= 0.33 {
@@ -237,6 +237,8 @@ fn choose_journey_type() -> JourneyType {
 }
 
 /// Choose a random neighbourhood, equal chance of each
+/// scenario: The scenario of the simulation
+/// Returns: The chosen neighbourhood
 fn choose_neighbourhood(scenario: &Scenario) -> Arc<Neighbourhood> {
     let mut weighted: Vec<distributions::Weighted<Arc<Neighbourhood>>> = scenario.neighbourhoods
         .iter()
@@ -247,6 +249,8 @@ fn choose_neighbourhood(scenario: &Scenario) -> Arc<Neighbourhood> {
 }
 
 /// Choose a random subculture, equal chance of each
+/// scenario: The scenario of the simulation
+/// Returns: The chosen subculture
 fn choose_subculture(scenario: &Scenario) -> Arc<Subculture> {
     let mut weighted: Vec<distributions::Weighted<Arc<Subculture>>> = scenario.subcultures
         .iter()
@@ -256,7 +260,13 @@ fn choose_subculture(scenario: &Scenario) -> Arc<Subculture> {
     weighted_choice.sample(&mut thread_rng())
 }
 
-// Choose an initial norm an habit
+/// Choose an initial norm and habit
+/// subculture: The subculture of the agent
+/// subculture_connectivity: How connected the agent is to the subculture
+/// _suggestibility: Not currently used
+/// commute_length: The distance of the agent's commute
+/// neighbourhood: The neighbourhood of the agent
+/// Returns: The chosen transport mode
 fn choose_initial_norm_and_habit(subculture: &Arc<Subculture>,
                                  subculture_connectivity: f32,
                                  _sugestibility: f32,
@@ -398,7 +408,13 @@ fn generate_csv_header(scenario: &Scenario) -> String {
     )
 }
 
-fn generate_csv_output(day: u32, weather: &Weather, scenario: &Scenario,agents: &[Rc<RefCell<Agent>>]) -> String {
+/// Generate CSV output that conforms to the header generated in generate_csv_header(...)
+/// day: The day number
+/// weather: The current weather
+/// scenario: The current scenario
+/// agents: The agents in the network
+/// Returns: The csv output for the day
+fn generate_csv_output(day: u32, weather: &Weather, scenario: &Scenario, agents: &[Rc<RefCell<Agent>>]) -> String {
     let rain = if weather == &Weather::Good { 0 } else { 1 };
 
     let active_mode = statistics::count_active_mode(agents);
@@ -464,7 +480,7 @@ fn link_agents_from_predefined_network(
             agents[k as usize].borrow_mut().social_network.append(&mut friends);
         });
     agents.iter()
-        .for_each(|a| info!("Social network size for agent: {}", a.borrow().social_network.len()))
+        .for_each(|a| debug!("Social network size for agent: {}", a.borrow().social_network.len()))
 }
 
 
