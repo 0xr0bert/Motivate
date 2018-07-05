@@ -78,7 +78,7 @@ pub fn run(id: String,
         .duration_since(std::time::UNIX_EPOCH)
         .expect("Time went backwards")
         .as_secs();
-    println!("[{}] Agents created in {}s", id, t1-t0);
+    info!("[{}] Agents created in {}s", id, t1-t0);
 
     // Create the output directory if it does not already exist
     fs::create_dir_all("output")?;
@@ -98,7 +98,7 @@ pub fn run(id: String,
         // Only consider weekdays
         if weekday(day) {
             // Log the day to the terminal
-            println!("[{}] Day: {}", id, day);
+            info!("[{}] Day: {}", id, day);
 
             // Get the new weather
             let new_weather = weather_pattern.get(&day).unwrap();
@@ -127,8 +127,8 @@ pub fn run(id: String,
         .expect("Time went backwards")
         .as_secs();
 
-    println!("[{}] Total elapsed time {}s", id, t2 - t0);
-    println!("[{}] Total elapsed time excl. set up {}s", id, t2 - t1);
+    info!("[{}] Total elapsed time {}s", id, t2 - t0);
+    info!("[{}] Total elapsed time excl. set up {}s", id, t2 - t1);
 
     Ok(())
 
@@ -259,7 +259,7 @@ fn choose_subculture(scenario: &Scenario) -> Arc<Subculture> {
 // Choose an initial norm an habit
 fn choose_initial_norm_and_habit(subculture: &Arc<Subculture>,
                                  subculture_connectivity: f32,
-                                 suggestibility: f32,
+                                 _sugestibility: f32,
                                  commute_length: JourneyType,
                                  neighbourhood: &Arc<Neighbourhood>
 ) -> TransportMode {
@@ -339,10 +339,6 @@ fn choose_initial_norm_and_habit(subculture: &Arc<Subculture>,
         .fold((TransportMode::Walk, -0.1),
               |(k0, v0): (TransportMode, f32), (k1, v1): (TransportMode, f32)| if v1 > v0 { (k1, v1) } else { (k0, v0) })
         .0
-
-    // if initial_mode == TransportMode::Cycle && commute_length == JourneyType::Cycle {
-    //     println("{}", initial_cost.get(&TransportMode::Cycle).unwrap());
-    // }
 }
 
 /// Link agents to a social network
@@ -468,7 +464,7 @@ fn link_agents_from_predefined_network(
             agents[k as usize].borrow_mut().social_network.append(&mut friends);
         });
     agents.iter()
-        .for_each(|a| println!("{}", a.borrow().social_network.len()))
+        .for_each(|a| info!("Social network size for agent: {}", a.borrow().social_network.len()))
 }
 
 

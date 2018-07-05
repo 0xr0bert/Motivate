@@ -73,7 +73,7 @@ fn main() {
                     let mut file = std::fs::File::create(format!("networks/{}.yaml", i+1)).ok().unwrap();
                     file.write_all(item.as_bytes()).ok();
                 });
-            println!("DONE")
+            info!("Generating networks complete")
         }
     }
 
@@ -241,7 +241,6 @@ fn main() {
                 String::from("".to_owned() + &scenario.id[..] + "-" + &i.to_string())));
         }
     }
-    println!("DEBUG: {}", scenario_and_thread_ids.len());
 
     scenario_and_thread_ids.par_iter().for_each(|(scenario, thread_id)| {
         let network_number: String = thread_id
@@ -253,7 +252,6 @@ fn main() {
             .expect("File cannot be opened");
 
         let network = read_network(file);
-        println!("{}", thread_id);
 
         simulation::run(thread_id.to_string(),
                      scenario,
@@ -273,11 +271,11 @@ fn main() {
         .duration_since(std::time::UNIX_EPOCH)
         .expect("Time went backwards")
         .as_secs();
-    println!("TOTAL RUNNING TIME: {}s", t1 - t0)
+    info!("TOTAL RUNNING TIME: {}s", t1 - t0)
 }
 
 fn read_network(mut file: File) -> HashMap<u32, Vec<u32>> {
-    println!("READING");
+    debug!("READING NETWORK");
     let mut file_contents = String::new();
     file.read_to_string(&mut file_contents)
         .expect("There was an error reading the file");
