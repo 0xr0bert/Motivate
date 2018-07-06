@@ -22,6 +22,7 @@ use scenario::Scenario;
 use agent::Agent;
 use statistics;
 use union_with::union_of;
+use social_network;
 
 /// Run the simulation
 /// scenario: The scenario of the simulation
@@ -152,7 +153,9 @@ fn set_up(scenario: &Scenario,
 
     // Generate social network
     // self.link_agents_to_social_network(&residents, self.number_of_social_network_links);
-    link_agents_from_predefined_network(&mut residents, network);
+    link_agents_from_predefined_network(&mut residents, network, |agent, friends| agent.social_network.append(friends));
+    residents.iter()
+        .for_each(|a| debug!("Social network size for agent: {}", a.borrow().social_network.len()));
 
     // Group agents by neighbourhood
     let neighbourhood_residents: HashMap<String, Vec<Rc<RefCell<Agent>>>> = residents
@@ -356,33 +359,13 @@ fn choose_initial_norm_and_habit(subculture: &Arc<Subculture>,
 /// agents: a slice of agents
 /// n: the minimum number of links
 fn link_agents_to_neighbours(agents: &[Rc<RefCell<Agent>>], n: u32) {
-    // Create an empty Vec to store linked agents in
-    let mut linked_agents: Vec<Rc<RefCell<Agent>>> = Vec::new();
+    // Create network of ids
+    let network = social_network::generate_social_network(n, agents.len() as u32);
+    // Create the neighbourhood network from the network of ids
+    link_agents_from_predefined_network(agents, network, |agent, friends| agent.neighbours.append(friends));
 
-    // For each rc pointer in agents
-    for rc in agents.iter() {
-        // if there are not yet n agents linked
-        if linked_agents.len() < n as usize {
-            // link the new agent, to all others
-            for linked_agent in linked_agents.iter() {
-                rc.borrow_mut().neighbours.push(linked_agent.clone());
-                linked_agent.borrow_mut().neighbours.push(rc.clone())
-            }
-        } else {
-            // Otherwise, link rc to n linked_agents, using preferential attachment
-            let mut weighted: Vec<distributions::Weighted<Rc<RefCell<Agent>>>> = linked_agents
-                .iter()
-                .map(|a| distributions::Weighted {weight: a.borrow().neighbours.len() as u32, item: a.clone()})
-                .collect();
-            let weighted_choice = distributions::WeightedChoice::new(&mut weighted);
-            for _ in 0..n {
-                let friend = &mut weighted_choice.sample(&mut thread_rng());
-                friend.borrow_mut().neighbours.push(rc.clone());
-                rc.borrow_mut().neighbours.push(friend.clone());
-            }
-        }
-        linked_agents.push(rc.clone());
-    }
+    agents.iter()
+        .for_each(|a| debug!("Neighbourhood network size for agent: {}", a.borrow().neighbours.len()))
 }
 
 /// Generate the header for the csv file
@@ -467,20 +450,24 @@ fn generate_csv_output(day: u32, weather: &Weather, scenario: &Scenario, agents:
 /// Link agents to a predefined social network
 /// agents: a slice of agents
 /// network: A map from agent id, to a vector of friend ids
+/// f: Should add friends to a network of agent.
 fn link_agents_from_predefined_network(
-    agents: &mut [Rc<RefCell<Agent>>], network: HashMap<u32, Vec<u32>>)
+    agents: &[Rc<RefCell<Agent>>], 
+    network: HashMap<u32, Vec<u32>>, 
+    f: fn(agent: &mut Agent, friends: &mut Vec<Rc<RefCell<Agent>>>))
 {
     network
         .iter()
         .for_each(|(&k, v)| {
+            // Load the agent's freinds
             let mut friends: Vec<Rc<RefCell<Agent>>> = v
                 .iter()
                 .map(|&id| agents[id as usize].clone())
                 .collect();
-            agents[k as usize].borrow_mut().social_network.append(&mut friends);
+            
+            // Add the agent's friends to the network of the agent
+            f(&mut agents[k as usize].borrow_mut(), &mut friends);
         });
-    agents.iter()
-        .for_each(|a| debug!("Social network size for agent: {}", a.borrow().social_network.len()))
 }
 
 
