@@ -151,24 +151,8 @@ impl Agent {
                 .iter()
                 .fold(HashMap::new(), |acc, x| union_of(&acc, x, |v1, v2| v1 * v2));
         }
-
-        // Find the minimum key-value pair of average and get its value
-        let min = average
-            .iter()
-            .fold((TransportMode::Car, 9.99999999f32),
-                  |(k0, v0): (TransportMode, f32), (&k1, &v1): (&TransportMode, &f32)| if v1 < v0 { (k1, v1) } else { (k0, v0) })
-            .1;
-
-        // If the minimum is greater than 1
-        // Divide all the data by the minimum so that at least one mode has a cost of 1, so that a
-        // mode is always possible
-        if min > 1.0 {
-            average
-                .into_iter()
-                .map(|(k, v)| (k, v / min))
-                .collect()
-        } else {
-            average
+        
+        average
         }
     }
 

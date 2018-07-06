@@ -318,23 +318,6 @@ fn choose_initial_norm_and_habit(subculture: &Arc<Subculture>,
         .map(|(k, v)| (k, v / (values_to_average.len() as f32)))
         .collect();
 
-    // Find the minimum key-value pair of initial_cost and get its value
-    let min = initial_cost
-        .iter()
-        .fold((TransportMode::Car, 9.99999999f32),
-              |(k0, v0): (TransportMode, f32), (&k1, &v1): (&TransportMode, &f32)| if v1 < v0 { (k1, v1) } else { (k0, v0) })
-        .1;
-
-    // If the minimum is greater than 1
-    // Divide all the data by the minimum so that at least one mode has a cost of 1, so that a
-    // mode is always possible
-    if min > 1.0 {
-        initial_cost = initial_cost
-            .into_iter()
-            .map(|(k, v)| (k, v / min))
-            .collect();
-    };
-
     // Filter out values where the budget is not greater than or equal to the cost
     // Calculate the difference between the budget and the cost
     // Get the maximum key-value pair (by value)
