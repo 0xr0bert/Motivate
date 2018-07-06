@@ -309,7 +309,7 @@ fn choose_initial_norm_and_habit(subculture: &Arc<Subculture>,
         vec![&neighbourhood_vals,
              &commute_length_cost];
 
-    let mut initial_cost: HashMap<TransportMode, f32> = values_to_average
+    let initial_cost: HashMap<TransportMode, f32> = values_to_average
         .iter()
         .fold(HashMap::new(), |acc, x|
             union_of(&acc, x, |v1, v2| v1 + v2)

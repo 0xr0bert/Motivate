@@ -56,7 +56,7 @@ fn main() {
     // Total number of years the simulation runs for
     let total_years = 1;
     // The number of people in the simulation
-    let number_of_people = 150000;
+    let number_of_people = 30000;
     // The number of simulations that should take place per scenario
     let number_of_simulations_per_scenario = 4;
     // How connected an agent is to their social network

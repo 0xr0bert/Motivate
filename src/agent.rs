@@ -153,7 +153,6 @@ impl Agent {
         }
         
         average
-        }
     }
 
     /// Updates the habit, should be called at the start of each day,
