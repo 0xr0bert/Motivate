@@ -23,6 +23,7 @@ use agent::Agent;
 use statistics;
 use union_with::union_of;
 use social_network;
+use std::cmp;
 
 /// Run the simulation
 /// scenario: The scenario of the simulation
@@ -283,11 +284,11 @@ fn choose_initial_norm_and_habit(subculture: &Arc<Subculture>,
         .map(|(&k, v)|(k, v * subculture_weight))
         .collect();
 
-    // Find the key-value-pair in initial_budger with the highest value, and store the value
-    let max: f32 = initial_budget
+    // Find the key-value-pair in initial_budget with the highest value, and store the value
+    let max: f32 = *initial_budget
         .iter()
-        .fold((TransportMode::Walk, -0.1),
-              |(k0, v0): (TransportMode, f32), (&k1, &v1): (&TransportMode, &f32)| if v1 > v0 { (k1, v1) } else { (k0, v0) })
+        .max_by(|v1, v2| v1.1.partial_cmp(&v2.1).unwrap_or(cmp::Ordering::Equal))
+        .unwrap()
         .1;
 
     // Make it so the the max mode has a budget of 1, therefore at least one mode is always possible

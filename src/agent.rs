@@ -3,6 +3,7 @@ use itertools::Itertools;
 use std::rc::Rc;
 use std::sync::Arc;
 use std::cell::RefCell;
+use std::cmp;
 use weather::Weather;
 use transport_mode::TransportMode;
 use journey_type::JourneyType;
@@ -54,14 +55,14 @@ impl Agent {
             vec![&social_vals, &neighbour_vals, &subculture_vals];
 
         // This sets the norm as the maximum of social_vals + neighbour_vals + subculture_vals
-        self.norm = values_to_add
+        self.norm = *values_to_add
                 .iter()
                 .fold(HashMap::new(), |acc, x|
                     union_of(&acc, x, |v1, v2| v1 + v2)
                 )
                 .iter()
-                .fold((TransportMode::Walk, -0.1),
-                      |(k0, v0): (TransportMode, f32), (&k1, &v1): (&TransportMode, &f32)| if v1 > v0 { (k1, v1) } else { (k0, v0) })
+                .max_by(|v1, v2| v1.1.partial_cmp(&v2.1).unwrap_or(cmp::Ordering::Equal))
+                .unwrap()
                 .0;
 
         // let habit_vals: HashMap<TransportMode, f32> = self.habit.iter().map(
@@ -84,10 +85,10 @@ impl Agent {
 
 
         // Find the key-value-pair in average with the highest value, and store the value
-        let max: f32 = average
+        let max: f32 = *average
             .iter()
-            .fold((TransportMode::Walk, -0.1),
-                  |(k0, v0): (TransportMode, f32), (&k1, &v1): (&TransportMode, &f32)| if v1 > v0 { (k1, v1) } else { (k0, v0) })
+            .max_by(|v1, v2| v1.1.partial_cmp(&v2.1).unwrap_or(cmp::Ordering::Equal))
+            .unwrap()
             .1;
 
         // Make it so the the max mode has a budget of 1, therefore at least one mode is always possible
@@ -201,8 +202,8 @@ impl Agent {
                     None
                 }
             })
-            .fold((TransportMode::Walk, -0.1),
-                  |(k0, v0): (TransportMode, f32), (k1, v1): (TransportMode, f32)| if v1 > v0 { (k1, v1) } else { (k0, v0) })
+            .max_by(|v1, v2| v1.1.partial_cmp(&v2.1).unwrap_or(cmp::Ordering::Equal))
+            .unwrap()
             .0;
     }
 }
