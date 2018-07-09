@@ -4,7 +4,7 @@ use std::collections::HashMap;
 use transport_mode::TransportMode;
 
 /// A demographic subculture
-#[derive(Clone)]
+#[derive(Clone, Serialize, Deserialize)]
 pub struct Subculture {
     /// The ID for the subculture
     pub id: String,

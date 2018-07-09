@@ -3,7 +3,7 @@ use subculture::Subculture;
 use neighbourhood::Neighbourhood;
 
 /// A scenario for a simulation run
-#[derive(Clone)]
+#[derive(Clone, Serialize, Deserialize)]
 pub struct Scenario {
     /// The scenario ID
     pub id: String,

@@ -4,7 +4,7 @@ use std::hash::Hasher;
 use transport_mode::TransportMode;
 
 /// A Neighbourhood
-#[derive(Clone)]
+#[derive(Clone, Serialize, Deserialize)]
 pub struct Neighbourhood {
     /// The ID for the Neighbourhood, neighbourhoods are equal if they share the same id
     pub id: String,

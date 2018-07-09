@@ -1,0 +1,91 @@
+---
+- id: pre intervention
+  subcultures:
+    - id: Subculture A
+      desirability:
+        Cycle: 0.8999999761581421
+        Walk: 0.699999988079071
+        Car: 0.800000011920929
+        PublicTransport: 0.5
+    - id: Subculture B
+      desirability:
+        Cycle: 0.6000000238418579
+        PublicTransport: 0.800000011920929
+        Walk: 0.699999988079071
+        Car: 0.8999999761581421
+    - id: Subculture C
+      desirability:
+        Walk: 0.8999999761581421
+        Car: 0.4000000059604645
+        Cycle: 0.8999999761581421
+        PublicTransport: 0.5
+  neighbourhoods:
+    - id: "0"
+      supportiveness:
+        Cycle: 0.699999988079071
+        Walk: 0.800000011920929
+        Car: 0.8999999761581421
+        PublicTransport: 0.8999999761581421
+    - id: "1"
+      supportiveness:
+        PublicTransport: 1.0
+        Walk: 0.800000011920929
+        Cycle: 0.699999988079071
+        Car: 0.5
+    - id: "2"
+      supportiveness:
+        PublicTransport: 0.5
+        Walk: 0.6000000238418579
+        Car: 0.8999999761581421
+        Cycle: 0.20000000298023225
+    - id: "3"
+      supportiveness:
+        PublicTransport: 0.8999999761581421
+        Cycle: 0.8999999761581421
+        Walk: 0.8999999761581421
+        Car: 0.20000000298023225
+- id: post intervention
+  subcultures:
+    - id: Subculture A
+      desirability:
+        Cycle: 0.8999999761581421
+        PublicTransport: 0.5
+        Car: 0.800000011920929
+        Walk: 0.699999988079071
+    - id: Subculture B
+      desirability:
+        PublicTransport: 0.800000011920929
+        Cycle: 0.6000000238418579
+        Car: 0.8999999761581421
+        Walk: 0.699999988079071
+    - id: Subculture C
+      desirability:
+        PublicTransport: 0.5
+        Walk: 0.8999999761581421
+        Car: 0.4000000059604645
+        Cycle: 0.8999999761581421
+  neighbourhoods:
+    - id: "0"
+      supportiveness:
+        Walk: 0.800000011920929
+        PublicTransport: 0.8999999761581421
+        Car: 0.8999999761581421
+        Cycle: 0.699999988079071
+    - id: "1"
+      supportiveness:
+        Cycle: 0.699999988079071
+        Car: 0.5
+        PublicTransport: 1.0
+        Walk: 0.800000011920929
+    - id: "4"
+      supportiveness:
+        Car: 0.699999988079071
+        Walk: 0.6000000238418579
+        Cycle: 0.800000011920929
+        PublicTransport: 0.5
+    - id: "3"
+      supportiveness:
+        PublicTransport: 0.8999999761581421
+        Walk: 0.8999999761581421
+        Car: 0.20000000298023225
+        Cycle: 0.8999999761581421

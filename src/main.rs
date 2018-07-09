@@ -1,6 +1,7 @@
 extern crate itertools;
 #[macro_use] extern crate maplit;
 #[macro_use] extern crate log;
+#[macro_use] extern crate serde_derive;
 extern crate simple_logger;
 extern crate serde_yaml;
 extern crate im;
@@ -78,28 +79,7 @@ fn main() {
     // If the generate flag is used
     if args.len() >= 2 {
         if &args[1] == "--generate" {
-            // Generate as many social networks as number of simulations per scenario
-            let numbers: Vec<u32> = (0..number_of_simulations_per_scenario).collect();
-            // Get the networks stored as a YAML file
-            let networks: Vec<String> = numbers
-                .par_iter()
-                .map(|_| serde_yaml::to_string(&social_network::generate_social_network(
-                    number_of_social_network_links, number_of_people)).unwrap())
-                .collect();
-
-            // Create a networks directory to store them in
-            std::fs::create_dir_all("networks")
-                .expect("Failed to create networks directory");
-
-            // For each network, save the network to a file
-            networks
-                .par_iter()
-                .enumerate()
-                .for_each(|(i, item)| {
-                    let mut file = std::fs::File::create(format!("networks/{}.yaml", i+1)).ok().unwrap();
-                    file.write_all(item.as_bytes()).ok();
-                });
-            info!("Generating networks complete")
+            generate_and_save_networks(number_of_simulations_per_scenario, number_of_social_network_links, number_of_people)
         }
     }
 
@@ -320,4 +300,37 @@ fn read_network(mut file: File) -> HashMap<u32, Vec<u32>> {
 
     serde_yaml::from_slice(file_contents.as_bytes())
         .expect("There was an error parsing the file")
+}
+
+/// This generates a social network, and saves it them to YAML files in the networks/ subdirectory
+/// number_of_simulations_per_scenario: One network is generated per scenario
+/// number_of_social_network_links: The minimum number of links each person in the social network has
+/// number_of_people: The number of people in the simulation
+fn generate_and_save_networks(
+    number_of_simulations_per_scenario: u32, 
+    number_of_social_network_links: u32,
+    number_of_people: u32) 
+{
+    // Generate as many social networks as number of simulations per scenario
+    let numbers: Vec<u32> = (0..number_of_simulations_per_scenario).collect();
+    // Get the networks stored as a YAML file
+    let networks: Vec<String> = numbers
+        .par_iter()
+        .map(|_| serde_yaml::to_string(&social_network::generate_social_network(
+            number_of_social_network_links, number_of_people)).unwrap())
+        .collect();
+
+    // Create a networks directory to store them in
+    std::fs::create_dir_all("networks")
+        .expect("Failed to create networks directory");
+
+    // For each network, save the network to a file
+    networks
+        .par_iter()
+        .enumerate()
+        .for_each(|(i, item)| {
+            let mut file = std::fs::File::create(format!("networks/{}.yaml", i+1)).ok().unwrap();
+            file.write_all(item.as_bytes()).ok();
+        });
+    info!("Generating networks complete")
 }
