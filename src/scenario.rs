@@ -17,7 +17,7 @@ pub struct Scenario {
 }
 
 impl Scenario {
-    pub fn from_file(mut file: File) -> Scenario {
+    pub fn from_file(mut file: File) -> Self {
         info!("Loading scenario from file");
         let mut file_contents = String::new();
 
