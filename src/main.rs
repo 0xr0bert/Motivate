@@ -24,17 +24,12 @@ mod statistics;
 use std::fs::File;
 use std::collections::HashMap;
 use std::time::SystemTime;
-use std::sync::Arc;
 use std::env;
 use std::io::Write;
 use std::io::prelude::*;
 use rayon::prelude::*;
 use weather::Weather;
-use transport_mode::TransportMode;
 use season::season;
-use neighbourhood::Neighbourhood;
-use subculture::Subculture;
-use scenario::Scenario;
 
 /// This is the entry point for the application
 fn main() {

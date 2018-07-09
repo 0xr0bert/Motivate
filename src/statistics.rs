@@ -5,7 +5,6 @@ use journey_type::JourneyType;
 use subculture::Subculture;
 use neighbourhood::Neighbourhood;
 use std::rc::Rc;
-use std::sync::Arc;
 use std::cell::RefCell;
 use itertools::Itertools;
 
@@ -48,27 +47,27 @@ pub fn count_active_norm(agents: &[Rc<RefCell<Agent>>]) -> usize {
 pub fn count_active_mode_by_commute_length(agents: &[Rc<RefCell<Agent>>]) -> HashMap<JourneyType, usize> {
     agents
         .iter()
-        .map(|agent| (agent.borrow().commute_length, agent.clone()))
+        .map(|agent| (agent.borrow().commute_length, Rc::clone(agent)))
         .into_group_map()
         .into_iter()
         .map(|(journey_type, grouped_agents)| (journey_type, count_active_mode(&grouped_agents)))
         .collect()
 }
 
-pub fn count_active_mode_by_subculture (agents: &[Rc<RefCell<Agent>>]) -> HashMap<Arc<Subculture>, usize> {
+pub fn count_active_mode_by_subculture (agents: &[Rc<RefCell<Agent>>]) -> HashMap<Rc<Subculture>, usize> {
     agents
         .iter()
-        .map(|agent| (agent.borrow().subculture.clone(), agent.clone()))
+        .map(|agent| (Rc::clone(&agent.borrow().subculture), Rc::clone(agent)))
         .into_group_map()
         .into_iter()
         .map(|(subculture, grouped_agents)| (subculture, count_active_mode(&grouped_agents)))
         .collect()
 }
 
-pub fn count_active_mode_by_neighbourhood (agents: &[Rc<RefCell<Agent>>]) -> HashMap<Arc<Neighbourhood>, usize> {
+pub fn count_active_mode_by_neighbourhood (agents: &[Rc<RefCell<Agent>>]) -> HashMap<Rc<Neighbourhood>, usize> {
     agents
         .iter()
-        .map(|agent| (agent.borrow().neighbourhood.clone(), agent.clone()))
+        .map(|agent| (Rc::clone(&agent.borrow().neighbourhood), Rc::clone(agent)))
         .into_group_map()
         .into_iter()
         .map(|(neighbourhood, grouped_agents)| (neighbourhood, count_active_mode(&grouped_agents)))

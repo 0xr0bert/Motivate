@@ -1,7 +1,6 @@
 use std::collections::HashMap;
 use itertools::Itertools;
 use std::rc::Rc;
-use std::sync::Arc;
 use std::cell::RefCell;
 use std::cmp;
 use weather::Weather;
@@ -13,8 +12,8 @@ use union_with::union_of;
 
 #[derive(PartialEq)]
 pub struct Agent {
-    pub subculture: Arc<Subculture>,
-    pub neighbourhood: Arc<Neighbourhood>,
+    pub subculture: Rc<Subculture>,
+    pub neighbourhood: Rc<Neighbourhood>,
     pub commute_length: JourneyType,
     pub weather_sensitivity: f32,
     pub consistency: f32,

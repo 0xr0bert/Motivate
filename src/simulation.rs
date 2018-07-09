@@ -11,7 +11,6 @@ use rand::distributions;
 use rand::distributions::Distribution;
 use rand::{thread_rng};
 use std::rc::Rc;
-use std::sync::Arc;
 use std::cell::RefCell;
 use std::fs::File;
 use weather::Weather;
@@ -247,10 +246,10 @@ fn choose_journey_type() -> JourneyType {
 /// Choose a random neighbourhood, equal chance of each
 /// scenario: The scenario of the simulation
 /// Returns: The chosen neighbourhood
-fn choose_neighbourhood(scenario: &Scenario) -> Arc<Neighbourhood> {
-    let mut weighted: Vec<distributions::Weighted<Arc<Neighbourhood>>> = scenario.neighbourhoods
+fn choose_neighbourhood(scenario: &Scenario) -> Rc<Neighbourhood> {
+    let mut weighted: Vec<distributions::Weighted<Rc<Neighbourhood>>> = scenario.neighbourhoods
         .iter()
-        .map(|s: &Arc<Neighbourhood>| distributions::Weighted {weight: 1, item: Arc::clone(s)})
+        .map(|s: &Rc<Neighbourhood>| distributions::Weighted {weight: 1, item: Rc::clone(s)})
         .collect();
     let weighted_choice = distributions::WeightedChoice::new(&mut weighted);
     weighted_choice.sample(&mut thread_rng())
@@ -259,10 +258,10 @@ fn choose_neighbourhood(scenario: &Scenario) -> Arc<Neighbourhood> {
 /// Choose a random subculture, equal chance of each
 /// scenario: The scenario of the simulation
 /// Returns: The chosen subculture
-fn choose_subculture(scenario: &Scenario) -> Arc<Subculture> {
-    let mut weighted: Vec<distributions::Weighted<Arc<Subculture>>> = scenario.subcultures
+fn choose_subculture(scenario: &Scenario) -> Rc<Subculture> {
+    let mut weighted: Vec<distributions::Weighted<Rc<Subculture>>> = scenario.subcultures
         .iter()
-        .map(|s: &Arc<Subculture>| distributions::Weighted {weight: 1, item: Arc::clone(s)})
+        .map(|s: &Rc<Subculture>| distributions::Weighted {weight: 1, item: Rc::clone(s)})
         .collect();
     let weighted_choice = distributions::WeightedChoice::new(&mut weighted);
     weighted_choice.sample(&mut thread_rng())
@@ -275,11 +274,11 @@ fn choose_subculture(scenario: &Scenario) -> Arc<Subculture> {
 /// commute_length: The distance of the agent's commute
 /// neighbourhood: The neighbourhood of the agent
 /// Returns: The chosen transport mode
-fn choose_initial_norm_and_habit(subculture: &Arc<Subculture>,
+fn choose_initial_norm_and_habit(subculture: &Rc<Subculture>,
                                  subculture_connectivity: f32,
                                  _sugestibility: f32,
                                  commute_length: JourneyType,
-                                 neighbourhood: &Arc<Neighbourhood>
+                                 neighbourhood: &Rc<Neighbourhood>
 ) -> TransportMode {
     let subculture_weight = subculture_connectivity;
     let mut initial_budget: HashMap<TransportMode, f32> = subculture

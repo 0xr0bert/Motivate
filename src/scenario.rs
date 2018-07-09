@@ -1,4 +1,4 @@
-use std::sync::Arc;
+use std::rc::Rc;
 use std::fs::File;
 use std::io::prelude::*;
 use subculture::Subculture;
@@ -11,9 +11,9 @@ pub struct Scenario {
     /// The scenario ID
     pub id: String,
     /// The subcultures in the scenario
-    pub subcultures: Vec<Arc<Subculture>>,
+    pub subcultures: Vec<Rc<Subculture>>,
     /// The neighbourhoods in the scenario
-    pub neighbourhoods: Vec<Arc<Neighbourhood>>
+    pub neighbourhoods: Vec<Rc<Neighbourhood>>
 }
 
 impl Scenario {
