@@ -9,7 +9,8 @@ use std::fs;
 use std::io;
 use rand::distributions;
 use rand::distributions::Distribution;
-use rand::{thread_rng};
+use rand::thread_rng;
+use rand::seq::sample_slice_ref;
 use std::rc::Rc;
 use std::cell::RefCell;
 use std::fs::File;
@@ -159,6 +160,45 @@ fn set_up(scenario: &Scenario,
         residents.push(Rc::new(RefCell::new(agent)));
     }
 
+    // This needs to be in a different scope, so that residents can be borrowed as immutable
+    // later on, when called at link_agents_from_predefined_network. Rust allows multiple
+    // immutable borrows, or one mutable borrow at any given time, if this is not in a different
+    // scope then &residents and &mut residents are in scope at the same time.
+    {
+        // Give people cars
+        let mut rng = thread_rng();
+        let sample = sample_slice_ref(&mut rng, &residents, scenario.number_of_cars as usize);
+        sample
+            .iter()
+            .for_each(|agent| agent.borrow_mut().owns_car = true);
+    }
+    {
+        // Give people bikes
+        let mut rng = thread_rng();
+        let sample = sample_slice_ref(&mut rng, &residents, scenario.number_of_cars as usize);
+        sample
+            .iter()
+            .for_each(|agent| agent.borrow_mut().owns_bike = true);
+    }
+
+    for agent in residents.iter() {
+        let mut borrowed_agent = agent.borrow_mut();
+        let new_mode = choose_initial_norm_and_habit(
+            &borrowed_agent.subculture, 
+            borrowed_agent.social_connectivity, 
+            borrowed_agent.suggestibility, 
+            borrowed_agent.commute_length, 
+            &borrowed_agent.neighbourhood, 
+            borrowed_agent.owns_car, 
+            borrowed_agent.owns_bike);
+        
+        borrowed_agent.current_mode = new_mode;
+        borrowed_agent.habit = hashmap!{new_mode => 1.0f32};
+        borrowed_agent.norm = new_mode;
+    }
+
+
+
     // Generate social network
     // self.link_agents_to_social_network(&residents, self.number_of_social_network_links);
     link_agents_from_predefined_network(&mut residents, network, |agent, friends| agent.social_network.append(friends));
@@ -180,7 +220,7 @@ fn set_up(scenario: &Scenario,
     residents
 }
 
-/// Create an unlinked agent
+/// Create an unlinked agent, that does not own a bike or a car, without a current mode
 /// scenario: The scenario of the simulation
 /// social_connectivity: How connected the agent is to its social network
 /// subculture_connectivity: How connected the agent is to its subculture
@@ -205,11 +245,8 @@ fn create_unlinked_agent(scenario: &Scenario,
     // TODO: Should suggestibility be used
     let suggestibility = random_normal(1.0, 0.25);
 
-    // Choose the current_mode
-    let current_mode: TransportMode = choose_initial_norm_and_habit(
-        &subculture, subculture_connectivity, suggestibility,
-        commute_length, &neighbourhood
-    );
+    // Use a placeholder transport mode
+    let current_mode: TransportMode = TransportMode::PublicTransport;
     let norm = current_mode;
     let last_mode = current_mode;
 
@@ -229,6 +266,8 @@ fn create_unlinked_agent(scenario: &Scenario,
         current_mode,
         last_mode,
         norm,
+        owns_bike: false,
+        owns_car: false,
         social_network: Vec::new(),
         neighbours: Vec::new(),
     }
@@ -282,7 +321,9 @@ fn choose_initial_norm_and_habit(subculture: &Rc<Subculture>,
                                  subculture_connectivity: f32,
                                  _sugestibility: f32,
                                  commute_length: JourneyType,
-                                 neighbourhood: &Rc<Neighbourhood>
+                                 neighbourhood: &Rc<Neighbourhood>,
+                                 owns_car: bool,
+                                 owns_bike: bool
 ) -> TransportMode {
     let subculture_weight = subculture_connectivity;
     let mut initial_budget: HashMap<TransportMode, f32> = subculture
@@ -304,6 +345,15 @@ fn choose_initial_norm_and_habit(subculture: &Rc<Subculture>,
         .into_iter()
         .map(|(k, v)| (k, v / max))
         .collect();
+
+    // Take car / bike ownership into account
+    let ownership_modifier = hashmap! {
+        TransportMode::Car => if owns_car {1.0f32} else {0.0f32},
+        TransportMode::Cycle => if owns_bike {1.0f32} else {0.0f32},
+    };
+
+    initial_budget = union_of(&initial_budget, &ownership_modifier, |v1, v2| v1 * v2);
+
 
     let commute_length_cost = commute_length.cost();
 
@@ -480,7 +530,7 @@ fn random_normal(mean: f32, sd: f32) -> f32 {
         .sample(&mut rand::thread_rng()) as f32
 }
 
-fn intervene(scenario: &Scenario, _agents: &[Rc<RefCell<Agent>>]) {
+fn intervene(scenario: &Scenario, agents: &[Rc<RefCell<Agent>>]) {
     // This adds Intervention.neighbourhood_changes.increase_in_supportiveness 
     // to Neighbourhood.supportiveness
     scenario
@@ -535,14 +585,95 @@ fn intervene(scenario: &Scenario, _agents: &[Rc<RefCell<Agent>>]) {
             }
         );
 
-    scenario
-        .neighbourhoods
-        .iter()
-        .for_each(
-            |neighbourhood| neighbourhood
-                .supportiveness
-                .borrow()
-                .iter()
-                .for_each(|(k, v)| println!("({}, {})", k.to_string(), v))
-        )
+    println!("PRE - BIKES: {}; CARS: {}",
+        agents
+            .iter()
+            .filter(|agent| agent.borrow().owns_bike)
+            .count(),
+        agents
+            .iter()
+            .filter(|agent| agent.borrow().owns_car)
+            .count()
+    );
+    
+    if scenario.intervention.change_in_number_of_bikes > 0 {
+        // Give people bikes
+        let agents_without_bikes: Vec<&Rc<RefCell<Agent>>> = agents
+            .iter()
+            .filter(|agent| !agent.borrow().owns_bike)
+            .collect();
+
+        let mut rng = thread_rng();
+        let sample = sample_slice_ref(
+            &mut rng, 
+            &agents_without_bikes, 
+            scenario.intervention.change_in_number_of_bikes as usize);
+        
+        sample
+            .iter()
+            .for_each(|agent| agent.borrow_mut().owns_bike = true);
+    } else if scenario.intervention.change_in_number_of_bikes < 0 {
+        // Take away some bikes
+        let agents_with_bikes: Vec<&Rc<RefCell<Agent>>> = agents
+            .iter()
+            .filter(|agent| agent.borrow().owns_bike)
+            .collect();
+
+        let mut rng = thread_rng();
+        let decrease_in_bikes = (scenario.intervention.change_in_number_of_bikes * -1) as usize;
+        let sample = sample_slice_ref(
+            &mut rng, 
+            &agents_with_bikes, 
+            decrease_in_bikes);
+        
+        sample
+            .iter()
+            .for_each(|agent| agent.borrow_mut().owns_bike = false);
+    }
+
+    if scenario.intervention.change_in_number_of_cars > 0 {
+        // Give people cars
+        let agents_without_cars: Vec<&Rc<RefCell<Agent>>> = agents
+            .iter()
+            .filter(|agent| !agent.borrow().owns_car)
+            .collect();
+
+        let mut rng = thread_rng();
+        let sample = sample_slice_ref(
+            &mut rng, 
+            &agents_without_cars, 
+            scenario.intervention.change_in_number_of_cars as usize);
+        
+        sample
+            .iter()
+            .for_each(|agent| agent.borrow_mut().owns_car = true);
+    } else if scenario.intervention.change_in_number_of_cars < 0 {
+        // Take away some cars
+        let agents_with_cars: Vec<&Rc<RefCell<Agent>>> = agents
+            .iter()
+            .filter(|agent| agent.borrow().owns_car)
+            .collect();
+
+        let mut rng = thread_rng();
+        let decrease_in_cars = (scenario.intervention.change_in_number_of_cars * -1) as usize;
+        let sample = sample_slice_ref(
+            &mut rng, 
+            &agents_with_cars, 
+            decrease_in_cars);
+        
+        sample
+            .iter()
+            .for_each(|agent| agent.borrow_mut().owns_car = false);
+    }
+
+    println!("POST - BIKES: {}; CARS: {}",
+        agents
+            .iter()
+            .filter(|agent| agent.borrow().owns_bike)
+            .count(),
+        agents
+            .iter()
+            .filter(|agent| agent.borrow().owns_car)
+            .count()
+    );
 }

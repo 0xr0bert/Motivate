@@ -1,5 +1,5 @@
 [package]
-name = "motivate_rust"
+name = "motivate"
 version = "0.1.0"
 authors = ["Robert Greener <robert.greener@kcl.ac.uk>"]
 

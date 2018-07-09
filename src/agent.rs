@@ -26,6 +26,8 @@ pub struct Agent {
     pub current_mode: TransportMode,
     pub last_mode: TransportMode,
     pub norm: TransportMode,
+    pub owns_bike: bool,
+    pub owns_car: bool,
     pub social_network: Vec<Rc<RefCell<Agent>>>,
     pub neighbours: Vec<Rc<RefCell<Agent>>>
 }
@@ -77,7 +79,7 @@ impl Agent {
             vec![&social_vals, &neighbour_vals, &subculture_vals, &self.habit];
 
         // This is the average of the values above
-        let average: HashMap<TransportMode, f32> = values_to_average
+        let mut average: HashMap<TransportMode, f32> = values_to_average
             .iter()
             .fold(HashMap::new(), |acc, x|
                 union_of(&acc, x, |v1, v2| v1 + v2)
@@ -86,6 +88,20 @@ impl Agent {
             .map(|(k, v)| (k, v / (values_to_average.len() as f32)))
             .collect();
 
+        // Take car / bike ownership into account
+        let ownership_modifier = hashmap! {
+            TransportMode::Car => if self.owns_car {1.0f32} else {0.0f32},
+            TransportMode::Cycle => if self.owns_bike {1.0f32} else {0.0f32},
+        };
+
+        average = union_of(&average, &ownership_modifier, |v1, v2| v1 * v2);
+        // if !self.owns_car {
+            // average.insert(TransportMode::Car, 0.0);
+        // }
+
+        // if !self.owns_bike {
+            // average.insert(TransportMode::Cycle, 0.0);
+        // }
 
         // Find the key-value-pair in average with the highest value, and store the value
         let max: f32 = *average
@@ -157,7 +173,12 @@ impl Agent {
                 .fold(HashMap::new(), |acc, x| union_of(&acc, x, |v1, v2| v1 * v2));
         }
         
+
+        // If the cost is > 1, make the cost 1?
         average
+            .into_iter()
+            .map(|(k, v)| (k, if v <= 1.0 {v} else {1.0}))
+            .collect()
     }
 
     /// Updates the habit, should be called at the start of each day,
@@ -191,12 +212,17 @@ impl Agent {
         // Get the budget and cost
         let budget = self.calculate_mode_budget();
         let cost = self.calculate_cost(weather, change_in_weather);
+        
+        if (*budget.get(&TransportMode::Car).unwrap() != 0.0f32 && !self.owns_car) ||
+            (*budget.get(&TransportMode::Cycle).unwrap() != 0.0f32 && !self.owns_bike) {
+                println!("Bad Unexpected things have occured");
+        };
 
         // Filter out values where the budget is not greater than or equal to the cost
         // Calculate the difference between the budget and the cost
         // Get the maximum key-value pair (by value)
         // Set the current_mode equal to the key
-        self.current_mode = budget
+        let x: HashMap<TransportMode, f32> = budget
             .iter()
             .filter_map(|(&k, &v)| {
                 let cost_val: f32 = *cost.get(&k).unwrap_or(&99999999.0f32);
@@ -206,6 +232,32 @@ impl Agent {
                     None
                 }
             })
+            .collect();
+
+        if x.len() == 0 {
+            println!("BUDGET - Car: {}; Cycle: {}; Walk: {}; PublicTransport: {}",
+                budget.get(&TransportMode::Car).unwrap_or(&-10.0f32),
+                budget.get(&TransportMode::Cycle).unwrap_or(&-10.0f32),
+                budget.get(&TransportMode::Walk).unwrap_or(&-10.0f32),
+                budget.get(&TransportMode::PublicTransport).unwrap_or(&-10.0f32)
+            );
+
+            println!("COST - Car: {}; Cycle: {}; Walk: {}; PublicTransport: {}",
+                cost.get(&TransportMode::Car).unwrap_or(&-10.0f32),
+                cost.get(&TransportMode::Cycle).unwrap_or(&-10.0f32),
+                cost.get(&TransportMode::Walk).unwrap_or(&-10.0f32),
+                cost.get(&TransportMode::PublicTransport).unwrap_or(&-10.0f32)
+            );
+
+        }
+
+        if (self.current_mode == TransportMode::Cycle && !self.owns_bike) ||
+            (self.current_mode == TransportMode::Car && !self.owns_car) {
+                println!("ODD");
+        };
+
+        self.current_mode = *x
+            .iter()
             .max_by(|v1, v2| v1.1.partial_cmp(&v2.1).unwrap_or(cmp::Ordering::Equal))
             .unwrap()
             .0;

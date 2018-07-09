@@ -15,6 +15,11 @@ pub struct Scenario {
     pub subcultures: Vec<Rc<Subculture>>,
     /// The neighbourhoods in the scenario
     pub neighbourhoods: Vec<Rc<Neighbourhood>>,
+
+    pub number_of_bikes: u32,
+
+    pub number_of_cars: u32,
+
     /// The intervention
     pub intervention: Intervention
 }

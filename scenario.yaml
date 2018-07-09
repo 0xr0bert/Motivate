@@ -44,13 +44,11 @@ neighbourhoods:
       Cycle: 0.8999999761581421
       Car: 0.20000000298023225
       Walk: 0.8999999761581421
+number_of_bikes: 10000
+number_of_cars: 5000
 intervention:
   day: 365
-  neighbourhood_changes:
-    - id: "0"
-      increase_in_supportiveness:
-        Car: -0.7
-        Cycle: 0.1
+  neighbourhood_changes: []
   subculture_changes: []
   change_in_number_of_bikes: 10000
   change_in_number_of_cars: -100

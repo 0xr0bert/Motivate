@@ -129,7 +129,7 @@ version = "0.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [[package]]
-name = "motivate_rust"
+name = "motivate"
 version = "0.1.0"
 dependencies = [
  "im 10.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
