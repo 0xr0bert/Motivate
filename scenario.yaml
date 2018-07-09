@@ -32,7 +32,7 @@ neighbourhoods:
       Walk: 0.800000011920929
       Car: 0.5
       PublicTransport: 1.0
-  - id: "4"
+  - id: "2"
     supportiveness:
       Walk: 0.6000000238418579
       PublicTransport: 0.5
@@ -44,3 +44,13 @@ neighbourhoods:
       Cycle: 0.8999999761581421
       Car: 0.20000000298023225
       Walk: 0.8999999761581421
+intervention:
+  day: 365
+  neighbourhood_changes:
+    - id: "2"
+      increase_in_supportiveness:
+        Car: -0.3
+        Cycle: 0.1
+  subculture_changes: []
+  change_in_number_of_bikes: 10000
+  change_in_number_of_cars: -100

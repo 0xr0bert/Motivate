@@ -4,6 +4,7 @@ use std::io::prelude::*;
 use subculture::Subculture;
 use serde_yaml;
 use neighbourhood::Neighbourhood;
+use intervention::Intervention;
 
 /// A scenario for a simulation run
 #[derive(Clone, Serialize, Deserialize)]
@@ -13,7 +14,9 @@ pub struct Scenario {
     /// The subcultures in the scenario
     pub subcultures: Vec<Rc<Subculture>>,
     /// The neighbourhoods in the scenario
-    pub neighbourhoods: Vec<Rc<Neighbourhood>>
+    pub neighbourhoods: Vec<Rc<Neighbourhood>>,
+    /// The intervention
+    pub intervention: Intervention
 }
 
 impl Scenario {

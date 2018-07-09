@@ -17,6 +17,7 @@ mod subculture;
 mod scenario;
 mod agent;
 mod simulation;
+mod intervention;
 mod union_with;
 mod social_network;
 mod statistics;
