@@ -83,153 +83,6 @@ fn main() {
         }
     }
 
-    
-    ///////////////////////////////////////////////
-    //            Model Scenarios               ///
-    ///////////////////////////////////////////////
-    let scenarios: Vec<Scenario> = vec![
-        Scenario {
-            id: String::from("pre intervention"),
-            subcultures: vec![
-                Arc::new(Subculture {
-                    id: "Subculture A".to_owned(),
-                    desirability: hashmap!{
-                        TransportMode::Car => 0.8f32,
-                        TransportMode::PublicTransport => 0.5f32,
-                        TransportMode::Cycle => 0.9f32,
-                        TransportMode::Walk => 0.7f32
-                    }
-                }),
-                Arc::new(Subculture {
-                    id: "Subculture B".to_owned(),
-                    desirability: hashmap!{
-                        TransportMode::Car => 0.9f32,
-                        TransportMode::PublicTransport => 0.8f32,
-                        TransportMode::Cycle => 0.6f32,
-                        TransportMode::Walk => 0.7f32
-                    }
-                }),
-                Arc::new(Subculture {
-                    id: "Subculture C".to_owned(),
-                    desirability: hashmap!{
-                        TransportMode::Car => 0.4f32,
-                        TransportMode::PublicTransport => 0.5f32,
-                        TransportMode::Cycle => 0.9f32,
-                        TransportMode::Walk => 0.9f32
-                    }
-                })
-            ],
-            neighbourhoods: vec!(
-                Arc::new(Neighbourhood{
-                    id: "0".to_owned(),
-                    supportiveness: hashmap!{
-                        TransportMode::Car => 0.9f32,
-                        TransportMode::Cycle => 0.7f32,
-                        TransportMode::Walk => 0.8f32,
-                        TransportMode::PublicTransport => 0.9f32
-                    }
-                }),
-                Arc::new(Neighbourhood{
-                    id: "1".to_owned(),
-                    supportiveness: hashmap!{
-                        TransportMode::Car => 0.5f32,
-                        TransportMode::Cycle => 0.7f32,
-                        TransportMode::Walk => 0.8f32,
-                        TransportMode::PublicTransport => 1.0f32
-                    }
-                }),
-                Arc::new(Neighbourhood{
-                    id: "2".to_owned(),
-                    supportiveness: hashmap!{
-                        TransportMode::Car => 0.9f32,
-                        TransportMode::Cycle => 0.2f32,
-                        TransportMode::Walk => 0.6f32,
-                        TransportMode::PublicTransport => 0.5f32
-                    }
-                }),
-                Arc::new(Neighbourhood{
-                    id: "3".to_owned(),
-                    supportiveness: hashmap!{
-                        TransportMode::Car => 0.2f32,
-                        TransportMode::Cycle => 0.9f32,
-                        TransportMode::Walk => 0.9f32,
-                        TransportMode::PublicTransport => 0.9f32
-                    }
-                }),
-            ),
-        },
-        Scenario {
-            id: String::from("post intervention"),
-            subcultures: vec![
-                Arc::new(Subculture {
-                    id: "Subculture A".to_owned(),
-                    desirability: hashmap!{
-                        TransportMode::Car => 0.8f32,
-                        TransportMode::PublicTransport => 0.5f32,
-                        TransportMode::Cycle => 0.9f32,
-                        TransportMode::Walk => 0.7f32
-                    }
-                }),
-                Arc::new(Subculture {
-                    id: "Subculture B".to_owned(),
-                    desirability: hashmap!{
-                        TransportMode::Car => 0.9f32,
-                        TransportMode::PublicTransport => 0.8f32,
-                        TransportMode::Cycle => 0.6f32,
-                        TransportMode::Walk => 0.7f32
-                    }
-                }),
-                Arc::new(Subculture {
-                    id: "Subculture C".to_owned(),
-                    desirability: hashmap!{
-                        TransportMode::Car => 0.4f32,
-                        TransportMode::PublicTransport => 0.5f32,
-                        TransportMode::Cycle => 0.9f32,
-                        TransportMode::Walk => 0.9f32
-                    }
-                })
-            ],
-            neighbourhoods: vec!(
-                Arc::new(Neighbourhood{
-                    id: "0".to_owned(),
-                    supportiveness: hashmap!{
-                        TransportMode::Car => 0.9f32,
-                        TransportMode::Cycle => 0.7f32,
-                        TransportMode::Walk => 0.8f32,
-                        TransportMode::PublicTransport => 0.9f32
-                    }
-                }),
-                Arc::new(Neighbourhood{
-                    id: "1".to_owned(),
-                    supportiveness: hashmap!{
-                        TransportMode::Car => 0.5f32,
-                        TransportMode::Cycle => 0.7f32,
-                        TransportMode::Walk => 0.8f32,
-                        TransportMode::PublicTransport => 1.0f32
-                    }
-                }),
-                Arc::new(Neighbourhood{
-                    id: "4".to_owned(),
-                    supportiveness: hashmap!{
-                        TransportMode::Car => 0.7f32,
-                        TransportMode::Cycle => 0.8f32,
-                        TransportMode::Walk => 0.6f32,
-                        TransportMode::PublicTransport => 0.5f32
-                    }
-                }),
-                Arc::new(Neighbourhood{
-                    id: "3".to_owned(),
-                    supportiveness: hashmap!{
-                        TransportMode::Car => 0.2f32,
-                        TransportMode::Cycle => 0.9f32,
-                        TransportMode::Walk => 0.9f32,
-                        TransportMode::PublicTransport => 0.9f32
-                    }
-                }),
-            ),
-        }
-    ];
-
     // Create a random weather pattern drawing from the percentage_bad_weather of each season
     let mut weather_pattern: HashMap<u32, Weather> = HashMap::new();
 
@@ -243,41 +96,30 @@ fn main() {
         }
     }
 
-    // Store a list of tuples of scenarios, and thread IDs
-    let mut scenario_and_thread_ids: Vec<(&Scenario, String)> = Vec::new();
-
-    for scenario in scenarios.iter() {
-        for i in 1..=number_of_simulations_per_scenario {
-            scenario_and_thread_ids.push((scenario,
-                String::from("".to_owned() + &scenario.id[..] + "-" + &i.to_string())));
-        }
-    }
-
     // Run in parallel the simulations
-    scenario_and_thread_ids.par_iter().for_each(|(scenario, thread_id)| {
-        // Get the network number and load the network
-        let network_number: String = thread_id
-            .split("-")
-            .last()
-            .unwrap()
-            .to_owned();
-        let file = File::open(format!("networks/{}.yaml", network_number))
-            .expect("File cannot be opened");
+    (1..=number_of_simulations_per_scenario)
+        .collect::<Vec<u32>>()
+        .par_iter()
+        .for_each(|id| {
+            // Get the network number and load the network
+            let network_number: String = id.to_string();
+            let file = File::open(format!("networks/{}.yaml", network_number))
+                .expect("File cannot be opened");
 
-        let network = read_network(file);
+            let network = read_network(file);
 
-        simulation::run(thread_id.to_string(),
-                     scenario,
-                     total_years,
-                     number_of_people,
-                     social_connectivity,
-                     subculture_connectivity,
-                     neighbourhood_connectivity,
-                     number_of_neighbour_links,
-                     days_in_habit_average,
-                     &weather_pattern,
-                     network)
-                     .unwrap();
+            simulation::run(id.to_string(),
+                        std::fs::File::open("scenario.yaml").ok().unwrap(),
+                        total_years,
+                        number_of_people,
+                        social_connectivity,
+                        subculture_connectivity,
+                        neighbourhood_connectivity,
+                        number_of_neighbour_links,
+                        days_in_habit_average,
+                        &weather_pattern,
+                        network)
+                        .unwrap();
     });
 
     // Output the running time

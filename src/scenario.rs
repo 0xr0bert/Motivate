@@ -1,5 +1,8 @@
 use std::sync::Arc;
+use std::fs::File;
+use std::io::prelude::*;
 use subculture::Subculture;
+use serde_yaml;
 use neighbourhood::Neighbourhood;
 
 /// A scenario for a simulation run
@@ -11,4 +14,17 @@ pub struct Scenario {
     pub subcultures: Vec<Arc<Subculture>>,
     /// The neighbourhoods in the scenario
     pub neighbourhoods: Vec<Arc<Neighbourhood>>
+}
+
+impl Scenario {
+    pub fn from_file(mut file: File) -> Scenario {
+        info!("Loading scenario from file");
+        let mut file_contents = String::new();
+
+        file.read_to_string(&mut file_contents)
+            .expect("There was an error reading the file");
+
+        serde_yaml::from_slice(file_contents.as_bytes())
+            .expect("There was an error parsing the file")
+    }
 }

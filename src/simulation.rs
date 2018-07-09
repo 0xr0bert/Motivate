@@ -13,6 +13,7 @@ use rand::{thread_rng};
 use std::rc::Rc;
 use std::sync::Arc;
 use std::cell::RefCell;
+use std::fs::File;
 use weather::Weather;
 use transport_mode::TransportMode;
 use journey_type::JourneyType;
@@ -37,7 +38,7 @@ use std::cmp;
 /// network: The social network
 /// Returns: Result, nothing if successful, io:Error if output could not be written
 pub fn run(id: String,
-           scenario: &Scenario,
+           scenario_file: File,
            total_years: u32,
            number_of_people: u32,
            social_connectivity: f32,
@@ -46,16 +47,19 @@ pub fn run(id: String,
            number_of_neighbour_links: u32,
            days_in_habit_average: u32,
            weather_pattern: &HashMap<u32, Weather>,
-           network: HashMap<u32, Vec<u32>>) -> Result<(), io::Error>{
+           network: HashMap<u32, Vec<u32>>) -> Result<(), io::Error> {
     // Used for monitoring running time
     let t0 = SystemTime::now()
         .duration_since(std::time::UNIX_EPOCH)
         .expect("Time went backwards")
         .as_secs();
 
+    // Load scenario
+    let scenario = Scenario::from_file(scenario_file);
+
     // Create the agents
     let mut residents: Vec<Rc<RefCell<Agent>>> = set_up(
-        scenario, social_connectivity, subculture_connectivity,
+        &scenario, social_connectivity, subculture_connectivity,
         neighbourhood_connectivity, days_in_habit_average,
         number_of_neighbour_links, number_of_people, network);
 
@@ -71,13 +75,13 @@ pub fn run(id: String,
 
     // Create the output file, and write the header to it
     let mut file = fs::File::create(format!("output/output_{}.csv", id))?;
-    file.write_all(generate_csv_header(scenario).as_bytes())?;
+    file.write_all(generate_csv_header(&scenario).as_bytes())?;
 
     // Get the weather at day 0
     let mut weather = weather_pattern.get(&0).unwrap();
 
     // Write the first set of statistics to the file
-    file.write_all(generate_csv_output(0, &weather, scenario, &residents).as_bytes())?;
+    file.write_all(generate_csv_output(0, &weather, &scenario, &residents).as_bytes())?;
 
     // For each day in the simulation
     for day in 1..total_years * 365 {
@@ -103,7 +107,7 @@ pub fn run(id: String,
             weather = new_weather;
 
             // Log the stats to the file
-            file.write_all(generate_csv_output(day, &weather, scenario, &residents).as_bytes())?;
+            file.write_all(generate_csv_output(day, &weather, &scenario, &residents).as_bytes())?;
         }
     }
 
