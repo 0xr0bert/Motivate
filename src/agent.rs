@@ -46,9 +46,13 @@ impl Agent {
             count_in_subgroup(&self.neighbours, self.neighbourhood_connectivity);
 
         // This is the subculture desirability weighted by subculture connectivity
-        let subculture_vals: HashMap<TransportMode, f32> = self.subculture.desirability.iter().map(
-            |(&k, &v)| (k, v * self.subculture_connectivity)
-        ).collect();
+        let subculture_vals: HashMap<TransportMode, f32> = self.subculture
+            .desirability
+            .borrow()
+            .iter()
+            .map(
+                |(&k, &v)| (k, v * self.subculture_connectivity)
+            ).collect();
 
         let values_to_add: Vec<&HashMap<TransportMode, f32>> =
             vec![&social_vals, &neighbour_vals, &subculture_vals];
@@ -106,6 +110,7 @@ impl Agent {
         // Take the supportiveness for each mode, away from 1, so a lower supportiveness = higher cost
         let neighbourhood_vals: HashMap<TransportMode, f32> = self.neighbourhood
             .supportiveness
+            .borrow()
             .iter()
             .map(|(&k, v)| (k, 1.0f32 - v))
             .collect();

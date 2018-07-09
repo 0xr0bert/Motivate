@@ -1,5 +1,6 @@
 use std::hash::Hasher;
 use std::hash::Hash;
+use std::cell::RefCell;
 use std::collections::HashMap;
 use transport_mode::TransportMode;
 
@@ -9,7 +10,7 @@ pub struct Subculture {
     /// The ID for the subculture
     pub id: String,
     /// The desirability is a score from 0 - 1 for each transport mode
-    pub desirability: HashMap<TransportMode, f32>
+    pub desirability: RefCell<HashMap<TransportMode, f32>>
 }
 
 impl PartialEq for Subculture {

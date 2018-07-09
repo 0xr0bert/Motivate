@@ -283,6 +283,7 @@ fn choose_initial_norm_and_habit(subculture: &Rc<Subculture>,
     let subculture_weight = subculture_connectivity;
     let mut initial_budget: HashMap<TransportMode, f32> = subculture
         .desirability
+        .borrow()
         .iter()
         .map(|(&k, v)|(k, v * subculture_weight))
         .collect();
@@ -305,6 +306,7 @@ fn choose_initial_norm_and_habit(subculture: &Rc<Subculture>,
     // Take the supportiveness for each mode, away from 1, so a lower supportiveness = higher cost
     let neighbourhood_vals: HashMap<TransportMode, f32> = neighbourhood
         .supportiveness
+        .borrow()
         .iter()
         .map(|(&k, v)| (k, 1.0f32 - v))
         .collect();
