@@ -51,7 +51,7 @@ fn main() {
     ///////////////////////////////////////////////
     
     // Total number of years the simulation runs for
-    let total_years = 1;
+    let total_years = 2;
     // The number of people in the simulation
     let number_of_people = 30000;
     // The number of simulations that should take place per scenario
@@ -70,7 +70,7 @@ fn main() {
     let number_of_neighbour_links = 10;
     // This is used as a weighting for the habit average, the most recent n days, account
     // for approximately 86% of the average
-    let days_in_habit_average = 30;
+    let days_in_habit_average = 5;
 
     // If the generate flag is used
     if args.len() >= 2 {

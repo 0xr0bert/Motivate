@@ -47,9 +47,9 @@ neighbourhoods:
 intervention:
   day: 365
   neighbourhood_changes:
-    - id: "2"
+    - id: "0"
       increase_in_supportiveness:
-        Car: -0.3
+        Car: -0.7
         Cycle: 0.1
   subculture_changes: []
   change_in_number_of_bikes: 10000

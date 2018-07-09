@@ -34,5 +34,5 @@ pub struct SubcultureChange {
     pub id: String,
 
     /// Be very careful that this does not make the desirability > 1 or < 0
-    pub increase_in_supportiveness: HashMap<TransportMode, f32>
+    pub increase_in_desirability: HashMap<TransportMode, f32>
 }

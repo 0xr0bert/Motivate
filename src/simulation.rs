@@ -84,6 +84,10 @@ pub fn run(id: String,
 
     // For each day in the simulation
     for day in 1..total_years * 365 {
+        if day == scenario.intervention.day {
+            intervene(&scenario, &residents)
+        }
+
         // Only consider weekdays
         if weekday(day) {
             // Log the day to the terminal
@@ -474,4 +478,71 @@ fn weekday(day: u32) -> bool {
 fn random_normal(mean: f32, sd: f32) -> f32 {
     rand::distributions::Normal::new(mean as f64, sd as f64)
         .sample(&mut rand::thread_rng()) as f32
+}
+
+fn intervene(scenario: &Scenario, _agents: &[Rc<RefCell<Agent>>]) {
+    // This adds Intervention.neighbourhood_changes.increase_in_supportiveness 
+    // to Neighbourhood.supportiveness
+    scenario
+        .intervention
+        .neighbourhood_changes
+        .iter()
+        .for_each(
+            |change| {
+                let neighbourhood_to_change = scenario
+                    .neighbourhoods
+                    .iter()
+                    .filter(|neighbourhood| neighbourhood.id == change.id)
+                    .next()
+                    .expect("A neighbourhood in your intervention was not found");
+
+                let new_supportiveness = union_of(
+                    &neighbourhood_to_change.supportiveness.borrow(),
+                    &change.increase_in_supportiveness, 
+                    |v1, v2| v1 + v2);
+
+                neighbourhood_to_change
+                    .supportiveness
+                    .borrow_mut()
+                    .iter_mut()
+                    .for_each(|(k, v)| *v = *new_supportiveness.get(&k).unwrap());
+            }
+        );
+
+    scenario
+        .intervention
+        .subculture_changes
+        .iter()
+        .for_each(
+            |change| {
+                let subculture_to_change = scenario
+                    .subcultures
+                    .iter()
+                    .filter(|subculture| subculture.id == change.id)
+                    .next()
+                    .expect("A subculture in your intervention was not found");
+
+                let new_desirability = union_of(
+                    &subculture_to_change.desirability.borrow(),
+                    &change.increase_in_desirability, 
+                    |v1, v2| v1 + v2);    
+
+                subculture_to_change
+                    .desirability
+                    .borrow_mut()
+                    .iter_mut()
+                    .for_each(|(k, v)| *v = *new_desirability.get(&k).unwrap());
+            }
+        );
+
+    scenario
+        .neighbourhoods
+        .iter()
+        .for_each(
+            |neighbourhood| neighbourhood
+                .supportiveness
+                .borrow()
+                .iter()
+                .for_each(|(k, v)| println!("({}, {})", k.to_string(), v))
+        )
 }
