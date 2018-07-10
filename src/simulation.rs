@@ -25,6 +25,7 @@ use statistics;
 use union_with::union_of;
 use social_network;
 use std::cmp;
+use gaussian;
 
 /// Run the simulation
 /// scenario: The scenario of the simulation
@@ -46,6 +47,7 @@ pub fn run(id: String,
            neighbourhood_connectivity: f32,
            number_of_neighbour_links: u32,
            days_in_habit_average: u32,
+           distributions: Vec<(f64, f64, f64)>,
            weather_pattern: &HashMap<u32, Weather>,
            network: HashMap<u32, Vec<u32>>) -> Result<(), io::Error> {
     // Used for monitoring running time
@@ -61,7 +63,8 @@ pub fn run(id: String,
     let mut residents: Vec<Rc<RefCell<Agent>>> = set_up(
         &scenario, social_connectivity, subculture_connectivity,
         neighbourhood_connectivity, days_in_habit_average,
-        number_of_neighbour_links, number_of_people, network);
+        number_of_neighbour_links, number_of_people, 
+        distributions, network);
 
     // Report the setup running time
     let t1 = SystemTime::now()
@@ -149,6 +152,7 @@ fn set_up(scenario: &Scenario,
           days_in_habit_average: u32,
           number_of_neighbour_links: u32,
           number_of_people: u32,
+          distributions: Vec<(f64, f64, f64)>,
           network: HashMap<u32, Vec<u32>>) -> Vec<Rc<RefCell<Agent>>> {
     // Create an empty vec to store agents
     let mut residents: Vec<Rc<RefCell<Agent>>> = Vec::new();
@@ -180,6 +184,30 @@ fn set_up(scenario: &Scenario,
             .iter()
             .for_each(|agent| agent.borrow_mut().owns_bike = true);
     }
+
+    let commute_distances: Vec<f64> = gaussian::get_samples_from_gmm(number_of_people as usize, distributions)
+        .into_iter()
+        .map(|x| x.abs())
+        .collect();
+
+    // Assign commute distances
+    commute_distances
+        .iter()
+        .zip(residents.iter())
+        .for_each(|(distance, agent)| {
+            let agent_ref = &mut agent.borrow_mut();
+
+            agent_ref.commute_length_continuous = *distance;
+
+            // Assign categorical distance
+            if *distance < 4241.0 {
+                agent_ref.commute_length = JourneyType::LocalCommute
+            } else if *distance < 19457.0 {
+                agent_ref.commute_length = JourneyType::CityCommute
+            } else {
+                agent_ref.commute_length = JourneyType::DistantCommute
+            }
+        });
 
     for agent in residents.iter() {
         let mut borrowed_agent = agent.borrow_mut();
@@ -220,7 +248,7 @@ fn set_up(scenario: &Scenario,
     residents
 }
 
-/// Create an unlinked agent, that does not own a bike or a car, without a current mode
+/// Create an unlinked agent, that does not own a bike or a car, without a current mode, and without a commute length
 /// scenario: The scenario of the simulation
 /// social_connectivity: How connected the agent is to its social network
 /// subculture_connectivity: How connected the agent is to its subculture
@@ -232,10 +260,9 @@ fn create_unlinked_agent(scenario: &Scenario,
                          subculture_connectivity: f32,
                          neighbourhood_connectivity: f32,
                          days_in_habit_average: u32) -> Agent {
-    // Choose a subculture, neighbourhood, and commute length
+    // Choose a subculture and, neighbourhood
     let subculture = choose_subculture(scenario);
     let neighbourhood = choose_neighbourhood(scenario);
-    let commute_length = choose_journey_type();
 
     // Weather sensitivity is currently fixed
     let weather_sensitivity = 0.9f32;
@@ -254,7 +281,8 @@ fn create_unlinked_agent(scenario: &Scenario,
     Agent {
         subculture,
         neighbourhood,
-        commute_length,
+        commute_length: JourneyType::LocalCommute,
+        commute_length_continuous: 0.0,
         weather_sensitivity,
         consistency,
         suggestibility,
@@ -270,19 +298,6 @@ fn create_unlinked_agent(scenario: &Scenario,
         owns_car: false,
         social_network: Vec::new(),
         neighbours: Vec::new(),
-    }
-}
-
-/// Choose a random JourneyType, equal chance of each
-/// Returns: The chosen JourneyType
-fn choose_journey_type() -> JourneyType {
-    let x = rand::random::<f32>();
-    if x <= 0.33 {
-        JourneyType::LocalCommute
-    } else if x <= 0.66 {
-        JourneyType::CityCommute
-    } else {
-        JourneyType::DistantCommute
     }
 }
 

@@ -21,6 +21,7 @@ mod intervention;
 mod union_with;
 mod social_network;
 mod statistics;
+mod gaussian;
 
 use std::fs::File;
 use std::collections::HashMap;
@@ -96,6 +97,7 @@ fn main() {
                         parameters.neighbourhood_connectivity,
                         parameters.number_of_neighbour_links,
                         parameters.days_in_habit_average,
+                        parameters.distributions.clone(),
                         &weather_pattern,
                         network)
                         .unwrap();
@@ -177,9 +179,13 @@ struct Parameters {
     /// The minimum number of links in the neighbourhood-wide social network, an agent should have
     /// This is the mean number of links / 2
     number_of_neighbour_links: u32,
-    // This is used as a weighting for the habit average, the most recent n days, account
-    // for approximately 86% of the average
-    days_in_habit_average: u32
+    /// This is used as a weighting for the habit average, the most recent n days, account
+    /// for approximately 86% of the average
+    days_in_habit_average: u32,
+
+    /// A vec of tuples (mean, sd, weight)
+    /// Used for commute length
+    distributions: Vec<(f64, f64, f64)>
 }
 
 impl Parameters {

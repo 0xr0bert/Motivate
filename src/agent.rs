@@ -15,6 +15,7 @@ pub struct Agent {
     pub subculture: Rc<Subculture>,
     pub neighbourhood: Rc<Neighbourhood>,
     pub commute_length: JourneyType,
+    pub commute_length_continuous: f64,
     pub weather_sensitivity: f32,
     pub consistency: f32,
     pub suggestibility: f32,
