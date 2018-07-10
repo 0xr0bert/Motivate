@@ -3,5 +3,5 @@
 /.idea/
 *.iml
 output/
-networks/
+config/networks/
 .vscode/
