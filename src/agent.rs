@@ -10,33 +10,75 @@ use neighbourhood::Neighbourhood;
 use subculture::Subculture;
 use union_with::union_of;
 
+/// The agent in the model
 #[derive(PartialEq)]
 pub struct Agent {
+    /// The demographic agent of the subculture
     pub subculture: Rc<Subculture>,
+
+    /// The neighbourhood the agent lives in
     pub neighbourhood: Rc<Neighbourhood>,
+
+    /// The distance of the agent's commute (categorical).  
+    /// This may become deprecated, once commute_length_continuous
+    /// has a corresponding cost function
     pub commute_length: JourneyType,
+
+    /// The distance of the agent's commute.  
+    /// This is currently unused, but should correspond to the
+    /// categorical commute_length
     pub commute_length_continuous: f64,
+
+    /// How sensitive the agent is to the weather
     pub weather_sensitivity: f32,
+    
+    /// How consistent the agent is (used as a weighting for habit)
     pub consistency: f32,
-    pub suggestibility: f32,
+
+    /// How connected the agent is to its social network
     pub social_connectivity: f32,
+
+    /// How connected the agent is to its subculture
     pub subculture_connectivity: f32,
+
+    /// How connected the agent is to its neighbourhood
     pub neighbourhood_connectivity: f32,
+
+    /// The weight used for the average
     pub average_weight: f32,
+
+    /// The habit of the agent, mapping the TransportMode, to a
+    /// recency-weighted average where 1 was used, if the TransportMode
+    /// was used on a given day, 0 if it was not.
     pub habit: HashMap<TransportMode, f32>,
+
+    /// How the agent is currently travelling to work
     pub current_mode: TransportMode,
+
+    /// How the agent travelled to work on the previous day
     pub last_mode: TransportMode,
+
+    /// The maximum of the joint effects of social network, subculture
+    /// and neighbours, appropriately weighted
     pub norm: TransportMode,
+
+    /// Whether the agent owns a bike
     pub owns_bike: bool,
+
+    /// Whether the agent owns a car
     pub owns_car: bool,
+
+    /// The friends of the agent
     pub social_network: Vec<Rc<RefCell<Agent>>>,
+
+    /// Neighbours of the agent
     pub neighbours: Vec<Rc<RefCell<Agent>>>
 }
 
 impl Agent {
-    /// Calculate the mode budget for the agent
+    /// Calculate the mode budget for the agent  
     /// Will also update the norm
-    /// Returns: the mode budget, a map from TransportMode to values
+    /// * Returns: the mode budget, a map from TransportMode to values
     fn calculate_mode_budget(&mut self) -> HashMap<TransportMode, f32> {
         // This is the percentage of people in the social network who take a given TransportMode,
         // Weighted by social connectivity
@@ -71,6 +113,7 @@ impl Agent {
                 .unwrap()
                 .0;
 
+        // Weight habit by consistenct
         let habit_vals: HashMap<TransportMode, f32> = self.habit.iter().map(
             |(&k, &v)| (k, v * self.consistency)
         ).collect();
@@ -96,13 +139,6 @@ impl Agent {
         };
 
         average = union_of(&average, &ownership_modifier, |v1, v2| v1 * v2);
-        // if !self.owns_car {
-            // average.insert(TransportMode::Car, 0.0);
-        // }
-
-        // if !self.owns_bike {
-            // average.insert(TransportMode::Cycle, 0.0);
-        // }
 
         // Find the key-value-pair in average with the highest value, and store the value
         let max: f32 = *average
@@ -119,10 +155,10 @@ impl Agent {
             .collect()
     }
 
-    /// Calcute the cost of travel
-    /// weather: The current weather
-    /// change_in_weather: true if there has been a change in the weather, false otherwise
-    /// Returns: A Map from transport mode to its cost
+    /// Calculate the cost of travel
+    /// * weather: The current weather
+    /// * change_in_weather: true if there has been a change in the weather, false otherwise
+    /// * Returns: A Map from transport mode to its cost
     fn calculate_cost(&self, weather: &Weather, change_in_weather: bool) -> HashMap<TransportMode, f32> {
         // Take the supportiveness for each mode, away from 1, so a lower supportiveness = higher cost
         let neighbourhood_vals: HashMap<TransportMode, f32> = self.neighbourhood
@@ -207,8 +243,8 @@ impl Agent {
     }
 
     /// Choose a mode of travel
-    /// weather: The current weather
-    /// change_in_weather: true if there has been a change in the weather, false otherwise
+    /// * weather: The current weather
+    /// * change_in_weather: true if there has been a change in the weather, false otherwise
     pub fn choose(&mut self, weather: &Weather, change_in_weather: bool) {
         // Get the budget and cost
         let budget = self.calculate_mode_budget();
@@ -223,7 +259,7 @@ impl Agent {
         // Calculate the difference between the budget and the cost
         // Get the maximum key-value pair (by value)
         // Set the current_mode equal to the key
-        let x: HashMap<TransportMode, f32> = budget
+        budget
             .iter()
             .filter_map(|(&k, &v)| {
                 let cost_val: f32 = *cost.get(&k).unwrap_or(&99999999.0f32);
@@ -233,32 +269,6 @@ impl Agent {
                     None
                 }
             })
-            .collect();
-
-        if x.len() == 0 {
-            println!("BUDGET - Car: {}; Cycle: {}; Walk: {}; PublicTransport: {}",
-                budget.get(&TransportMode::Car).unwrap_or(&-10.0f32),
-                budget.get(&TransportMode::Cycle).unwrap_or(&-10.0f32),
-                budget.get(&TransportMode::Walk).unwrap_or(&-10.0f32),
-                budget.get(&TransportMode::PublicTransport).unwrap_or(&-10.0f32)
-            );
-
-            println!("COST - Car: {}; Cycle: {}; Walk: {}; PublicTransport: {}",
-                cost.get(&TransportMode::Car).unwrap_or(&-10.0f32),
-                cost.get(&TransportMode::Cycle).unwrap_or(&-10.0f32),
-                cost.get(&TransportMode::Walk).unwrap_or(&-10.0f32),
-                cost.get(&TransportMode::PublicTransport).unwrap_or(&-10.0f32)
-            );
-
-        }
-
-        if (self.current_mode == TransportMode::Cycle && !self.owns_bike) ||
-            (self.current_mode == TransportMode::Car && !self.owns_car) {
-                println!("ODD");
-        };
-
-        self.current_mode = *x
-            .iter()
             .max_by(|v1, v2| v1.1.partial_cmp(&v2.1).unwrap_or(cmp::Ordering::Equal))
             .unwrap()
             .0;
@@ -266,16 +276,16 @@ impl Agent {
 }
 
 /// Counts in a subgroup of Agents, the percentage of people taking each travel mode
-/// x: the subgroup of agents
-/// weight: the weight to apply to the percentage
-fn count_in_subgroup(x: &[Rc<RefCell<Agent>>], weight: f32) -> HashMap<TransportMode, f32> {
+/// * agents: the subgroup of agents
+/// * weight: the weight to apply to the percentage
+fn count_in_subgroup(agents: &[Rc<RefCell<Agent>>], weight: f32) -> HashMap<TransportMode, f32> {
     // Group them by travel mode, then calculate the percentage (multiplied by the weight)
-    let x_size = x.len() as f32;
-    x
+    let agents_size = agents.len() as f32;
+    agents
         .iter()
         .map(|x| (x.borrow().last_mode, 1))
         .into_group_map()
         .iter()
-        .map(|(&k, v)| (k, (v.len() as f32) * weight / x_size))
+        .map(|(&k, v)| (k, (v.len() as f32) * weight / agents_size))
         .collect()
 }

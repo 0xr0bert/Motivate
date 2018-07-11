@@ -14,6 +14,7 @@ pub struct Subculture {
 }
 
 impl PartialEq for Subculture {
+    /// Returns true if the subcultures have the same ID
     fn eq(&self, other: &Subculture) -> bool {
         self.id == other.id
     }
@@ -22,6 +23,7 @@ impl PartialEq for Subculture {
 impl Eq for Subculture {}
 
 impl Hash for Subculture {
+    /// The ID is hashed
     fn hash<H: Hasher>(&self, state: &mut H) {
         self.id.hash(state);
     }

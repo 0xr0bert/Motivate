@@ -4,11 +4,11 @@ use rand::{thread_rng};
 use std::collections::HashMap;
 
 /// Generate a scale free network
-/// https://en.wikipedia.org/wiki/Barab%C3%A1si%E2%80%93Albert_model
-/// agents: a slice of agents
-/// min: the minimum number of links
-/// total_number: the number of nodes in the network
-/// Returns: A HashMap mapping ids, to the ids of their friends
+/// <https://en.wikipedia.org/wiki/Barab%C3%A1si%E2%80%93Albert_model>
+/// * agents: a slice of agents
+/// * min: the minimum number of links
+/// * total_number: the number of nodes in the network
+/// * Returns: A HashMap mapping ids, to the ids of their friends
 pub fn generate_social_network(min: u32, total_number: u32) -> HashMap<u32, Vec<u32>>{
     // Create a HashMap mapping ids, to the ids of their friends
     let mut network: HashMap<u32, Vec<u32>> = HashMap::new();

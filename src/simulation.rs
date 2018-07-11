@@ -29,16 +29,16 @@ use std::cmp;
 use gaussian;
 
 /// Run the simulation
-/// scenario: The scenario of the simulation
-/// number_of_people: The number of agents to generate
-/// social_connectivity: How connected the agent is to its social network
-/// subculture_connectivity: How connected the agent is to its subculture
-/// neighbourhood_connectivity: How connected the agent is to its neighbourhood
-/// number_of_neighbour_links: The minimum number of links each agent should have in the neighbourhood network
-/// days_in_habit_average: How many days should be used in the habit average
-/// weather_pattern: A HashMap from day number to Weather
-/// network: The social network
-/// Returns: Result, nothing if successful, io:Error if output could not be written
+/// * scenario: The scenario of the simulation
+/// * number_of_people: The number of agents to generate
+/// * social_connectivity: How connected the agent is to its social network
+/// * subculture_connectivity: How connected the agent is to its subculture
+/// * neighbourhood_connectivity: How connected the agent is to its neighbourhood
+/// * number_of_neighbour_links: The minimum number of links each agent should have in the neighbourhood network
+/// * days_in_habit_average: How many days should be used in the habit average
+/// * weather_pattern: A HashMap from day number to Weather
+/// * network: The social network
+/// * Returns: Result, nothing if successful, io:Error if output could not be written
 pub fn run(id: String,
            scenario_file: File,
            total_years: u32,
@@ -50,7 +50,8 @@ pub fn run(id: String,
            days_in_habit_average: u32,
            distributions: Vec<(f64, f64, f64)>,
            weather_pattern: &HashMap<u32, Weather>,
-           network: HashMap<u32, Vec<u32>>) -> Result<(), io::Error> {
+           network: HashMap<u32, Vec<u32>>) -> Result<(), io::Error> 
+{
     // Used for monitoring running time
     let t0 = SystemTime::now()
         .duration_since(std::time::UNIX_EPOCH)
@@ -89,6 +90,7 @@ pub fn run(id: String,
 
     // For each day in the simulation
     for day in 1..total_years * 365 {
+        // Intervene at the intervention day
         if day == scenario.intervention.day {
             intervene(&scenario, &residents)
         }
@@ -132,20 +134,21 @@ pub fn run(id: String,
 
 }
 
-/// Create the agents
-/// Returns a set of Rc pointers, storing RefCells of Agents
-/// Rc are reference counter pointers, that are store immutable data,
-/// RefCells are immutable but have mutable contents
-/// Meaning that Agents are mutable
-/// scenario: The scenario of the simulation
-/// social_connectivity: How connected the agent is to its social network
-/// subculture_connectivity: How connected the agent is to its subculture
-/// neighbourhood_connectivity: How connected the agent is to its neighbourhood
-/// days_in_habit_average: How many days should be used in the habit average
-/// number_of_neighbour_links: The minimum number of links each agent should have in the neighbourhood network
-/// number_of_people: The number of agents to generate
-/// network: The social network
-/// Returns: The created agents
+/// Create the agents  
+/// Returns a set of Rc pointers, storing RefCells of Agents  
+/// Rc are reference counter pointers, that are store immutable data,  
+/// RefCells are immutable but have mutable contents  
+/// Meaning that Agents are mutable  
+/// See [here](https://doc.rust-lang.org/book/second-edition/ch15-05-interior-mutability.html) for more details
+/// * scenario: The scenario of the simulation
+/// * social_connectivity: How connected the agent is to its social network
+/// * subculture_connectivity: How connected the agent is to its subculture
+/// * neighbourhood_connectivity: How connected the agent is to its neighbourhood
+/// * days_in_habit_average: How many days should be used in the habit average
+/// * number_of_neighbour_links: The minimum number of links each agent should have in the neighbourhood network
+/// * number_of_people: The number of agents to generate
+/// * network: The social network
+/// * Returns: The created agents
 fn set_up(scenario: &Scenario,
           social_connectivity: f32,
           subculture_connectivity: f32,
@@ -186,6 +189,7 @@ fn set_up(scenario: &Scenario,
             .for_each(|agent| agent.borrow_mut().owns_bike = true);
     }
 
+    // Get random commute distances
     let commute_distances: Vec<f64> = gaussian::get_samples_from_gmm(number_of_people as usize, distributions)
         .into_iter()
         .map(|x| x.abs())
@@ -210,12 +214,12 @@ fn set_up(scenario: &Scenario,
             }
         });
 
+    // For each agent, choose an initial mode
     for agent in residents.iter() {
         let mut borrowed_agent = agent.borrow_mut();
         let new_mode = choose_initial_norm_and_habit(
             &borrowed_agent.subculture, 
             borrowed_agent.social_connectivity, 
-            borrowed_agent.suggestibility, 
             borrowed_agent.commute_length, 
             &borrowed_agent.neighbourhood, 
             borrowed_agent.owns_car, 
@@ -228,8 +232,7 @@ fn set_up(scenario: &Scenario,
 
 
 
-    // Generate social network
-    // self.link_agents_to_social_network(&residents, self.number_of_social_network_links);
+    // Load pre-generated social networks
     link_agents_from_predefined_network(&mut residents, network, |agent, friends| agent.social_network.append(friends));
     residents.iter()
         .for_each(|a| debug!("Social network size for agent: {}", a.borrow().social_network.len()));
@@ -250,12 +253,12 @@ fn set_up(scenario: &Scenario,
 }
 
 /// Create an unlinked agent, that does not own a bike or a car, without a current mode, and without a commute length
-/// scenario: The scenario of the simulation
-/// social_connectivity: How connected the agent is to its social network
-/// subculture_connectivity: How connected the agent is to its subculture
-/// neighbourhood_connectivity: How connected the agent is to its neighbourhood
-/// days_in_habit_average: How many days should be used in the habit average
-/// Returns: The created agent
+/// * scenario: The scenario of the simulation
+/// * social_connectivity: How connected the agent is to its social network
+/// * subculture_connectivity: How connected the agent is to its subculture
+/// * neighbourhood_connectivity: How connected the agent is to its neighbourhood
+/// * days_in_habit_average: How many days should be used in the habit average
+/// * Returns: The created agent
 fn create_unlinked_agent(scenario: &Scenario,
                          social_connectivity: f32,
                          subculture_connectivity: f32,
@@ -270,9 +273,6 @@ fn create_unlinked_agent(scenario: &Scenario,
     // TODO: Should consistency be used
     let consistency = 1.0f32;
 
-    // TODO: Should suggestibility be used
-    let suggestibility = random_normal(1.0, 0.25);
-
     // Use a placeholder transport mode
     let current_mode: TransportMode = TransportMode::PublicTransport;
     let norm = current_mode;
@@ -286,7 +286,6 @@ fn create_unlinked_agent(scenario: &Scenario,
         commute_length_continuous: 0.0,
         weather_sensitivity,
         consistency,
-        suggestibility,
         social_connectivity: social_connectivity,
         subculture_connectivity: subculture_connectivity,
         neighbourhood_connectivity: neighbourhood_connectivity,
@@ -303,8 +302,8 @@ fn create_unlinked_agent(scenario: &Scenario,
 }
 
 /// Choose a random neighbourhood, equal chance of each
-/// scenario: The scenario of the simulation
-/// Returns: The chosen neighbourhood
+/// * scenario: The scenario of the simulation
+/// * Returns: The chosen neighbourhood
 fn choose_neighbourhood(scenario: &Scenario) -> Rc<Neighbourhood> {
     let mut weighted: Vec<distributions::Weighted<Rc<Neighbourhood>>> = scenario.neighbourhoods
         .iter()
@@ -315,8 +314,8 @@ fn choose_neighbourhood(scenario: &Scenario) -> Rc<Neighbourhood> {
 }
 
 /// Choose a random subculture, equal chance of each
-/// scenario: The scenario of the simulation
-/// Returns: The chosen subculture
+/// * scenario: The scenario of the simulation
+/// * Returns: The chosen subculture
 fn choose_subculture(scenario: &Scenario) -> Rc<Subculture> {
     let mut weighted: Vec<distributions::Weighted<Rc<Subculture>>> = scenario.subcultures
         .iter()
@@ -327,15 +326,13 @@ fn choose_subculture(scenario: &Scenario) -> Rc<Subculture> {
 }
 
 /// Choose an initial norm and habit
-/// subculture: The subculture of the agent
-/// subculture_connectivity: How connected the agent is to the subculture
-/// _suggestibility: Not currently used
-/// commute_length: The distance of the agent's commute
-/// neighbourhood: The neighbourhood of the agent
-/// Returns: The chosen transport mode
+/// * subculture: The subculture of the agent
+/// * subculture_connectivity: How connected the agent is to the subculture
+/// * commute_length: The distance of the agent's commute
+/// * neighbourhood: The neighbourhood of the agent
+/// * Returns: The chosen transport mode
 fn choose_initial_norm_and_habit(subculture: &Rc<Subculture>,
                                  subculture_connectivity: f32,
-                                 _sugestibility: f32,
                                  commute_length: JourneyType,
                                  neighbourhood: &Rc<Neighbourhood>,
                                  owns_car: bool,
@@ -414,9 +411,9 @@ fn choose_initial_norm_and_habit(subculture: &Rc<Subculture>,
 }
 
 /// Link agents to a social network
-/// https://en.wikipedia.org/wiki/Barab%C3%A1si%E2%80%93Albert_model
-/// agents: a slice of agents
-/// n: the minimum number of links
+/// <https://en.wikipedia.org/wiki/Barab%C3%A1si%E2%80%93Albert_model>
+/// * agents: a slice of agents
+/// * n: the minimum number of links
 fn link_agents_to_neighbours(agents: &[Rc<RefCell<Agent>>], n: u32) {
     // Create network of ids
     let network = social_network::generate_social_network(n, agents.len() as u32);
@@ -428,8 +425,8 @@ fn link_agents_to_neighbours(agents: &[Rc<RefCell<Agent>>], n: u32) {
 }
 
 /// Generate the header for the csv file
-/// scenario: The scenario for this simulation
-/// Returns: The header for the csv file
+/// * scenario: The scenario for this simulation
+/// * Returns: The header for the csv file
 fn generate_csv_header(scenario: &Scenario) -> String {
     let subculture_ids: Vec<String> = scenario
         .subcultures
@@ -451,11 +448,11 @@ fn generate_csv_header(scenario: &Scenario) -> String {
 }
 
 /// Generate CSV output that conforms to the header generated in generate_csv_header(...)
-/// day: The day number
-/// weather: The current weather
-/// scenario: The current scenario
-/// agents: The agents in the network
-/// Returns: The csv output for the day
+/// * day: The day number
+/// * weather: The current weather
+/// * scenario: The current scenario
+/// * agents: The agents in the network
+/// * Returns: The csv output for the day
 fn generate_csv_output(day: u32, weather: &Weather, scenario: &Scenario, agents: &[Rc<RefCell<Agent>>]) -> String {
     let rain = if weather == &Weather::Good { 0 } else { 1 };
 
@@ -507,9 +504,9 @@ fn generate_csv_output(day: u32, weather: &Weather, scenario: &Scenario, agents:
 }
 
 /// Link agents to a predefined social network
-/// agents: a slice of agents
-/// network: A map from agent id, to a vector of friend ids
-/// f: Should add friends to a network of agent.
+/// * agents: a slice of agents
+/// * network: A map from agent id, to a vector of friend ids
+/// * f: Should add friends to a network of agent.
 fn link_agents_from_predefined_network(
     agents: &[Rc<RefCell<Agent>>], 
     network: HashMap<u32, Vec<u32>>, 
@@ -531,21 +528,15 @@ fn link_agents_from_predefined_network(
 
 
 /// Calculate whether a given day is a weekday
-/// day: The day number
-/// Returns: true iff day is a weekday
+/// * day: The day number
+/// * Returns: true iff day is a weekday
 fn weekday(day: u32) -> bool {
     day % 7 < 5
 }
 
-/// Gets a random number from a normal distribution
-/// mean: The mean of the normal distribution
-/// sd: The standard deviation of the normal distributions
-/// Returns: A random float from N(mean, sd)
-fn random_normal(mean: f32, sd: f32) -> f32 {
-    rand::distributions::Normal::new(mean as f64, sd as f64)
-        .sample(&mut rand::thread_rng()) as f32
-}
-
+/// This will run the intervention definined in scenario
+/// * scenario: The scenario containing the interventions
+/// * agents: The agents in the simulation
 fn intervene(scenario: &Scenario, agents: &[Rc<RefCell<Agent>>]) {
     // This adds Intervention.neighbourhood_changes.increase_in_supportiveness 
     // to Neighbourhood.supportiveness
@@ -575,6 +566,8 @@ fn intervene(scenario: &Scenario, agents: &[Rc<RefCell<Agent>>]) {
             }
         );
 
+    // This adds Intervention.subculture_changes.increase_in_desirability 
+    // to Subculture.desirability
     scenario
         .intervention
         .subculture_changes
@@ -600,25 +593,17 @@ fn intervene(scenario: &Scenario, agents: &[Rc<RefCell<Agent>>]) {
                     .for_each(|(k, v)| *v = *new_desirability.get(&k).unwrap());
             }
         );
-
-    println!("PRE - BIKES: {}; CARS: {}",
-        agents
-            .iter()
-            .filter(|agent| agent.borrow().owns_bike)
-            .count(),
-        agents
-            .iter()
-            .filter(|agent| agent.borrow().owns_car)
-            .count()
-    );
     
     if scenario.intervention.change_in_number_of_bikes > 0 {
         // Give people bikes
+        
+        // Filter agents without bikes
         let agents_without_bikes: Vec<&Rc<RefCell<Agent>>> = agents
             .iter()
             .filter(|agent| !agent.borrow().owns_bike)
             .collect();
 
+        // Choose a random sample, the size of the increase, and give them bikes
         let mut rng = thread_rng();
         let sample = sample_slice_ref(
             &mut rng, 
@@ -630,11 +615,14 @@ fn intervene(scenario: &Scenario, agents: &[Rc<RefCell<Agent>>]) {
             .for_each(|agent| agent.borrow_mut().owns_bike = true);
     } else if scenario.intervention.change_in_number_of_bikes < 0 {
         // Take away some bikes
+
+        // Filter agents with bikes
         let agents_with_bikes: Vec<&Rc<RefCell<Agent>>> = agents
             .iter()
             .filter(|agent| agent.borrow().owns_bike)
             .collect();
 
+        // Choose a random sample, the size of the decrease, and take away bikes
         let mut rng = thread_rng();
         let decrease_in_bikes = (scenario.intervention.change_in_number_of_bikes * -1) as usize;
         let sample = sample_slice_ref(
@@ -649,11 +637,14 @@ fn intervene(scenario: &Scenario, agents: &[Rc<RefCell<Agent>>]) {
 
     if scenario.intervention.change_in_number_of_cars > 0 {
         // Give people cars
+
+        // Filter agents without cars
         let agents_without_cars: Vec<&Rc<RefCell<Agent>>> = agents
             .iter()
             .filter(|agent| !agent.borrow().owns_car)
             .collect();
 
+        // Choose a random sample, the size of the increase, and give them cars
         let mut rng = thread_rng();
         let sample = sample_slice_ref(
             &mut rng, 
@@ -665,11 +656,14 @@ fn intervene(scenario: &Scenario, agents: &[Rc<RefCell<Agent>>]) {
             .for_each(|agent| agent.borrow_mut().owns_car = true);
     } else if scenario.intervention.change_in_number_of_cars < 0 {
         // Take away some cars
+
+        // Filter agents with cars
         let agents_with_cars: Vec<&Rc<RefCell<Agent>>> = agents
             .iter()
             .filter(|agent| agent.borrow().owns_car)
             .collect();
 
+        // Choose a random sample, the size of the decrease, and take away cars
         let mut rng = thread_rng();
         let decrease_in_cars = (scenario.intervention.change_in_number_of_cars * -1) as usize;
         let sample = sample_slice_ref(
@@ -681,15 +675,4 @@ fn intervene(scenario: &Scenario, agents: &[Rc<RefCell<Agent>>]) {
             .iter()
             .for_each(|agent| agent.borrow_mut().owns_car = false);
     }
-
-    println!("POST - BIKES: {}; CARS: {}",
-        agents
-            .iter()
-            .filter(|agent| agent.borrow().owns_bike)
-            .count(),
-        agents
-            .iter()
-            .filter(|agent| agent.borrow().owns_car)
-            .count()
-    );
 }

@@ -14,6 +14,7 @@ pub struct Neighbourhood {
 }
 
 impl PartialEq for Neighbourhood {
+    /// Tests equality of neighbourhood's only equal if they have the same id
     fn eq(&self, other: &Neighbourhood) -> bool {
         self.id == other.id
     }
@@ -22,6 +23,7 @@ impl PartialEq for Neighbourhood {
 impl Eq for Neighbourhood {}
 
 impl Hash for Neighbourhood {
+    /// Returns the has of the id
     fn hash<H: Hasher>(&self, state: &mut H) {
         self.id.hash(state);
     }

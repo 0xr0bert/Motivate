@@ -113,22 +113,27 @@ fn main() {
 }
 
 /// Read a social network from a file
-/// file: An input file in YAML mapping ids to a list of ids
-/// Returns: A HashMap mapping ids, to the ids of their friends
+/// * file: An input file in YAML mapping ids to a list of ids
+/// * Returns: A HashMap mapping ids, to the ids of their friends
 fn read_network(mut file: File) -> HashMap<u32, Vec<u32>> {
     info!("READING NETWORK");
+
+    // Create a new String (heap allocated) to store the contents of the file
     let mut file_contents = String::new();
+
+    // Read the file into the String
     file.read_to_string(&mut file_contents)
         .expect("There was an error reading the file");
 
+    // Deserialize the network
     serde_yaml::from_slice(file_contents.as_bytes())
         .expect("There was an error parsing the file")
 }
 
 /// This generates a social network, and saves it them to YAML files in the networks/ subdirectory
-/// number_of_simulations_per_scenario: One network is generated per scenario
-/// number_of_social_network_links: The minimum number of links each person in the social network has
-/// number_of_people: The number of people in the simulation
+/// * number_of_simulations_per_scenario: One network is generated per scenario
+/// * number_of_social_network_links: The minimum number of links each person in the social network has
+/// * number_of_people: The number of people in the simulation
 fn generate_and_save_networks(
     number_of_simulations_per_scenario: u32, 
     number_of_social_network_links: u32,
@@ -155,6 +160,7 @@ fn generate_and_save_networks(
             let mut file = std::fs::File::create(format!("config/networks/{}.yaml", i+1)).ok().unwrap();
             file.write_all(item.as_bytes()).ok();
         });
+    
     info!("Generating networks complete")
 }
 
@@ -189,7 +195,11 @@ struct Parameters {
 }
 
 impl Parameters {
+    /// Loads Parameters from a file
+    /// * file: The YAML file storing the serialized parameters
+    /// * Returns; The created parameters
     pub fn from_file(mut file: File) -> Self {
+        ;
         info!("Loading parameters from file");
         let mut file_contents = String::new();
 
