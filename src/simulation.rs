@@ -3,6 +3,7 @@ extern crate rand;
 use std;
 use std::collections::HashMap;
 use std::io::Write;
+use std::io::BufWriter;
 use itertools::Itertools;
 use std::time::SystemTime;
 use std::fs;
@@ -77,14 +78,14 @@ pub fn run(id: String,
     fs::create_dir_all("output")?;
 
     // Create the output file, and write the header to it
-    let mut file = fs::File::create(format!("output/output_{}.csv", id))?;
-    file.write_all(generate_csv_header(&scenario).as_bytes())?;
+    let mut file = BufWriter::new(fs::File::create(format!("output/output_{}.csv", id))?);
+    file.write(generate_csv_header(&scenario).as_bytes())?;
 
     // Get the weather at day 0
     let mut weather = weather_pattern.get(&0).unwrap();
 
     // Write the first set of statistics to the file
-    file.write_all(generate_csv_output(0, &weather, &scenario, &residents).as_bytes())?;
+    file.write(generate_csv_output(0, &weather, &scenario, &residents).as_bytes())?;
 
     // For each day in the simulation
     for day in 1..total_years * 365 {
@@ -114,7 +115,7 @@ pub fn run(id: String,
             weather = new_weather;
 
             // Log the stats to the file
-            file.write_all(generate_csv_output(day, &weather, &scenario, &residents).as_bytes())?;
+            file.write(generate_csv_output(day, &weather, &scenario, &residents).as_bytes())?;
         }
     }
 
