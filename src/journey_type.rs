@@ -2,7 +2,7 @@ use std::collections::HashMap;
 use transport_mode::TransportMode;
 
 /// A categorical distance for commute
-#[derive(Eq, Hash, PartialEq, Copy, Clone)]
+#[derive(Eq, Hash, PartialEq, Copy, Clone, Serialize, Deserialize)]
 pub enum JourneyType {
     LocalCommute,
     CityCommute,

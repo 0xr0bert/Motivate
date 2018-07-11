@@ -22,6 +22,7 @@ mod union_with;
 mod social_network;
 mod statistics;
 mod gaussian;
+mod agent_generation;
 
 use std::fs::File;
 use std::collections::HashMap;
@@ -53,13 +54,17 @@ fn main() {
     // Get the system arguments
     let args: Vec<String> = env::args().collect();
 
+    let mut generate = false;
+
     // If the generate flag is used
     if args.len() >= 2 {
         if &args[1] == "--generate" {
             generate_and_save_networks(
                 parameters.number_of_simulations, 
                 parameters.number_of_social_network_links, 
-                parameters.number_of_people)
+                parameters.number_of_people);
+
+            generate = true;
         }
     }
 
@@ -99,7 +104,8 @@ fn main() {
                         parameters.days_in_habit_average,
                         parameters.distributions.clone(),
                         &weather_pattern,
-                        network)
+                        network,
+                        generate)
                         .unwrap();
     });
 
