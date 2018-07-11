@@ -10,7 +10,7 @@ use neighbourhood::Neighbourhood;
 use subculture::Subculture;
 use union_with::union_of;
 
-#[derive(PartialEq, Serialize, Deserialize)]
+#[derive(PartialEq)]
 pub struct Agent {
     pub subculture: Rc<Subculture>,
     pub neighbourhood: Rc<Neighbourhood>,
