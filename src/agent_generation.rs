@@ -175,7 +175,7 @@ fn create_unlinked_agent(scenario: &Scenario,
     // Weather sensitivity is currently fixed
     let weather_sensitivity = 0.9f32;
     // TODO: Should consistency be used
-    let consistency = rand::random::<f32>();
+    let consistency = 1.0f32;
 
     // TODO: Should suggestibility be used
     let suggestibility = random_normal(1.0, 0.25);

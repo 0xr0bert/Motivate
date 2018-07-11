@@ -71,13 +71,13 @@ impl Agent {
                 .unwrap()
                 .0;
 
-        // let habit_vals: HashMap<TransportMode, f32> = self.habit.iter().map(
-        //     |(&k, &v)| (k, v)
-        // ).collect();
+        let habit_vals: HashMap<TransportMode, f32> = self.habit.iter().map(
+            |(&k, &v)| (k, v * self.consistency)
+        ).collect();
 
         // Averages social_vals, neighbour_vals, subculture_vals, habit
         let values_to_average: Vec<&HashMap<TransportMode, f32>> =
-            vec![&social_vals, &neighbour_vals, &subculture_vals, &self.habit];
+            vec![&social_vals, &neighbour_vals, &subculture_vals, &habit_vals];
 
         // This is the average of the values above
         let mut average: HashMap<TransportMode, f32> = values_to_average
