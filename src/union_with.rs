@@ -3,6 +3,10 @@ use std::hash::Hash;
 use std::collections::HashMap;
 
 /// Merges two hashmaps, using f where the keys exist in both hashmaps
+/// * one: The first hashmap
+/// * two: The second hashmap
+/// * f: What to do when the key exists in both hashmaps
+/// * Returns: The union of one and two
 pub fn union_of<K, V>(one: &HashMap<K, V>, two: &HashMap<K, V>, f: fn(V, V) -> V) -> HashMap<K, V>
 where K: Hash + Eq + Clone,
       V: Clone

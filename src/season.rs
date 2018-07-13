@@ -1,3 +1,4 @@
+/// Used for the 4 seaons, each season has a percentage of bad weather
 #[derive(PartialEq, Copy, Clone)]
 pub enum Season {
     Winter,
@@ -21,6 +22,7 @@ impl Season {
 }
 
 /// Gets the season for a given day
+/// * day: The day number
 pub fn season(day: u32) -> Season {
     let day_in_year = day % 365;
     if day_in_year < 59 || (day_in_year >= 334 && day_in_year < 365) {

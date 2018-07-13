@@ -8,6 +8,9 @@ use std::rc::Rc;
 use std::cell::RefCell;
 use itertools::Itertools;
 
+/// Counts the number of agents who take an active mode
+/// * agents: The agents to count from
+/// * Returns: The number of agents who's current_mode is either Walk or Cycle
 pub fn count_active_mode(agents: &[Rc<RefCell<Agent>>]) -> usize {
     agents
         .iter()
@@ -16,6 +19,9 @@ pub fn count_active_mode(agents: &[Rc<RefCell<Agent>>]) -> usize {
         .count()
 }
 
+/// Counts the number of agents who take an active mode counter to their inactive norm
+/// * agents: The agents to count from
+/// * Returns: The number of agent's who's current mode is Walk or Cycle but their norm is Car or PublicTransport
 pub fn count_active_mode_counter_to_inactive_norm(agents: &[Rc<RefCell<Agent>>]) -> usize {
     agents
         .iter()
@@ -26,6 +32,9 @@ pub fn count_active_mode_counter_to_inactive_norm(agents: &[Rc<RefCell<Agent>>])
         .count()
 }
 
+/// Counts the number of agents who take an inactive mode counter to their active norm
+/// * agents: The agents to count from
+/// * Returns: The number of agent's who's current mode is Car or Public Transport but their norm is Walk or Cycle
 pub fn count_inactive_mode_counter_to_active_norm(agents: &[Rc<RefCell<Agent>>]) -> usize {
     agents
         .iter()
@@ -36,6 +45,9 @@ pub fn count_inactive_mode_counter_to_active_norm(agents: &[Rc<RefCell<Agent>>])
         .count()
 }
 
+/// Counts the number of agents who have an active norm
+/// * agents: The agents to count from
+/// * Returns: The number of agent's who's norm is Walk or Cycle
 pub fn count_active_norm(agents: &[Rc<RefCell<Agent>>]) -> usize {
     agents
         .iter()
@@ -44,6 +56,9 @@ pub fn count_active_norm(agents: &[Rc<RefCell<Agent>>]) -> usize {
         .count()
 }
 
+/// Counts the number of agents who take an active mode grouped by commute length
+/// * agents: The agents to count from
+/// * Returns: A Map: JourneyType -> The number of agent's who's current mode is Walk or Cycle 
 pub fn count_active_mode_by_commute_length(agents: &[Rc<RefCell<Agent>>]) -> HashMap<JourneyType, usize> {
     agents
         .iter()
@@ -54,6 +69,9 @@ pub fn count_active_mode_by_commute_length(agents: &[Rc<RefCell<Agent>>]) -> Has
         .collect()
 }
 
+/// Counts the number of agents who take an active mode grouped by Subculture
+/// * agents: The agents to count from
+/// * Returns: A Map: Subculture -> The number of agent's who's current mode is Walk or Cycle 
 pub fn count_active_mode_by_subculture (agents: &[Rc<RefCell<Agent>>]) -> HashMap<Rc<Subculture>, usize> {
     agents
         .iter()
@@ -64,6 +82,9 @@ pub fn count_active_mode_by_subculture (agents: &[Rc<RefCell<Agent>>]) -> HashMa
         .collect()
 }
 
+/// Counts the number of agents who take an active mode grouped by neighbourhood
+/// * agents: The agents to count from
+/// * Returns: A Map: Neighbourhood -> The number of agent's who's current mode is Walk or Cycle 
 pub fn count_active_mode_by_neighbourhood (agents: &[Rc<RefCell<Agent>>]) -> HashMap<Rc<Neighbourhood>, usize> {
     agents
         .iter()
