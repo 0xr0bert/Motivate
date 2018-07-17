@@ -4,7 +4,6 @@ extern crate itertools;
 #[macro_use] extern crate serde_derive;
 extern crate simple_logger;
 extern crate serde_yaml;
-extern crate im;
 extern crate rand;
 extern crate rayon;
 
