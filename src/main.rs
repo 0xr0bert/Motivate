@@ -6,6 +6,7 @@ extern crate simple_logger;
 extern crate serde_yaml;
 extern crate rand;
 extern crate rayon;
+extern crate hashmap_union;
 
 mod weather;
 mod transport_mode;
@@ -17,7 +18,6 @@ mod scenario;
 mod agent;
 mod simulation;
 mod intervention;
-mod union_with;
 mod social_network;
 mod statistics;
 mod gaussian;

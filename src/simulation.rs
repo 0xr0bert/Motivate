@@ -23,7 +23,7 @@ use subculture::Subculture;
 use scenario::Scenario;
 use agent::Agent;
 use statistics;
-use union_with::union_of;
+use hashmap_union::union_of;
 use social_network;
 use std::cmp;
 use gaussian;
