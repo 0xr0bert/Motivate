@@ -108,6 +108,15 @@ pub fn run(id: String,
                 resident.borrow_mut().update_habit();
             }
 
+            // Update neighbourhood congestion modifier
+            residents
+                .iter()
+                .map(|agent| (Rc::clone(&agent.borrow().neighbourhood), Rc::clone(agent)))
+                .into_group_map()
+                .iter_mut()
+                .for_each(|(neighbourhood, grouped_agents)| 
+                    neighbourhood.update_congestion_modifier(grouped_agents));
+
             // For each resident, choose a travel mode
             for resident in residents.iter_mut() {
                 resident.borrow_mut().choose(&new_weather, weather != new_weather);
