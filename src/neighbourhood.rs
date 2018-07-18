@@ -4,13 +4,17 @@ use std::hash::Hasher;
 use std::cell::RefCell;
 use transport_mode::TransportMode;
 
+// TODO: Is supportiveness the same as capacity
 /// A Neighbourhood
 #[derive(Clone, Serialize, Deserialize)]
 pub struct Neighbourhood {
     /// The ID for the Neighbourhood, neighbourhoods are equal if they share the same id
     pub id: String,
     /// A score from 0-1 for each transport mode, on how supportive the environment is
-    pub supportiveness: RefCell<HashMap<TransportMode, f32>>
+    pub supportiveness: RefCell<HashMap<TransportMode, f32>>,
+    /// The maximum capacity for a transport mode, at which there is no congestion
+    pub capacity: RefCell<HashMap<TransportMode, u32>>
+
 }
 
 impl PartialEq for Neighbourhood {
