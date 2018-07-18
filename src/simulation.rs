@@ -109,13 +109,9 @@ pub fn run(id: String,
             }
 
             // Update neighbourhood congestion modifier
-            residents
-                .iter()
-                .map(|agent| (Rc::clone(&agent.borrow().neighbourhood), Rc::clone(agent)))
-                .into_group_map()
-                .iter_mut()
-                .for_each(|(neighbourhood, grouped_agents)| 
-                    neighbourhood.update_congestion_modifier(grouped_agents));
+            for neighbourhood in scenario.neighbourhoods.iter() {
+                neighbourhood.update_congestion_modifier();
+            }
 
             // For each resident, choose a travel mode
             for resident in residents.iter_mut() {
@@ -174,7 +170,21 @@ fn set_up(scenario: &Scenario,
         let agent: Agent = create_unlinked_agent(scenario, social_connectivity,
             subculture_connectivity, neighbourhood_connectivity, days_in_habit_average);
 
-        residents.push(Rc::new(RefCell::new(agent)));
+        let rc_agent = Rc::new(RefCell::new(agent));
+        
+        {
+            // Add rc_agent to its neighbourhood's residents
+            // This needs to be in a different scope
+            let agent_ref = &rc_agent.borrow();
+
+            agent_ref
+                .neighbourhood
+                .residents
+                .borrow_mut()
+                .push(Rc::clone(&rc_agent));
+        }
+
+        residents.push(rc_agent);
     }
 
     // This needs to be in a different scope, so that residents can be borrowed as immutable
@@ -488,7 +498,7 @@ fn generate_csv_output(day: u32, weather: &Weather, scenario: &Scenario, agents:
         .collect();
 
     let active_mode_by_neighbourhood =
-        statistics::count_active_mode_by_neighbourhood(agents);
+        statistics::count_active_mode_by_neighbourhood(&scenario.neighbourhoods);
 
     let active_mode_by_neighbourhood_in_correct_order: Vec<String> = scenario
         .neighbourhoods

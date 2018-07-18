@@ -20,7 +20,14 @@ pub struct Neighbourhood {
 
     /// The calculated congestion modifier
     #[serde(default = "default_congestion_modifier")]
-    pub congestion_modifier: RefCell<HashMap<TransportMode, f32>>
+    pub congestion_modifier: RefCell<HashMap<TransportMode, f32>>,
+
+    /// The residents who live in this neighbourhood  
+    /// Essentially this is a RefCell so that the Vec inside can be changed  
+    /// This then contains reference counter (immutable) pointers to RefCell  
+    /// That are mutable on the side
+    #[serde(skip)]
+    pub residents: RefCell<Vec<Rc<RefCell<Agent>>>>
 }
 
 /// This returns a default congestion modifier of 1.0 for every mode
@@ -35,8 +42,7 @@ fn default_congestion_modifier() -> RefCell<HashMap<TransportMode, f32>> {
 
 impl Neighbourhood {
     /// This updates the congestion modifier
-    /// * agents_in_neighbourhood: The agents who live in this neighbourhood
-    pub fn update_congestion_modifier(&self, agents_in_neighbourhood: &[Rc<RefCell<Agent>>]) {
+    pub fn update_congestion_modifier(&self) {
         // Group agents by last mode
         // Count the agents
         // map ->
@@ -45,7 +51,11 @@ impl Neighbourhood {
         //    maximum_excess_demand = agents_in_neighbourhood.len() - capacity
         //    actual_excess_demand = count - capacity
         //    1.0 - (actual_excess_demand / maximum_excess_demand)
-        let new_congestion_modifier: HashMap<TransportMode, f32> = agents_in_neighbourhood
+        let agents_in_neighbourhood = &self.residents.borrow();
+
+        let new_congestion_modifier: HashMap<TransportMode, f32> = self
+            .residents
+            .borrow()
             .iter()
             .map(|agent| (agent.borrow().last_mode, Rc::clone(agent)))
             .into_group_map()
