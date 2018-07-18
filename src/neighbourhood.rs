@@ -20,11 +20,11 @@ pub struct Neighbourhood {
 
     /// The calculated congestion modifier
     #[serde(default = "default_congestion_modifier")]
-    pub congestion_modifier: RefCell<HashMap<TransportMode, f64>>
+    pub congestion_modifier: RefCell<HashMap<TransportMode, f32>>
 }
 
 /// This returns a default congestion modifier of 1.0 for every mode
-fn default_congestion_modifier() -> RefCell<HashMap<TransportMode, f64>> {
+fn default_congestion_modifier() -> RefCell<HashMap<TransportMode, f32>> {
     RefCell::new(hashmap! {
         TransportMode::Car => 1.0,
         TransportMode::Cycle => 1.0,
@@ -45,7 +45,7 @@ impl Neighbourhood {
         //    maximum_excess_demand = agents_in_neighbourhood.len() - capacity
         //    actual_excess_demand = count - capacity
         //    1.0 - (actual_excess_demand / maximum_excess_demand)
-        let new_congestion_modifier: HashMap<TransportMode, f64> = agents_in_neighbourhood
+        let new_congestion_modifier: HashMap<TransportMode, f32> = agents_in_neighbourhood
             .iter()
             .map(|agent| (agent.borrow().last_mode, Rc::clone(agent)))
             .into_group_map()
@@ -58,7 +58,7 @@ impl Neighbourhood {
                 } else {
                     let maximum_excess_demand: usize = agents_in_neighbourhood.len() - capacity_for_mode;
                     let actual_excess_demand: usize = count - capacity_for_mode;
-                    (mode, 1.0 - (actual_excess_demand as f64 / maximum_excess_demand as f64))
+                    (mode, 1.0 - (actual_excess_demand as f32 / maximum_excess_demand as f32))
                 }
             })
             .collect();
