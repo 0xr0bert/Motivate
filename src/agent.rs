@@ -123,7 +123,7 @@ impl Agent {
             vec![&social_vals, &neighbour_vals, &subculture_vals, &habit_vals];
 
         // This is the average of the values above
-        let mut average: HashMap<TransportMode, f32> = values_to_average
+        let average: HashMap<TransportMode, f32> = values_to_average
             .iter()
             .fold(HashMap::new(), |acc, x|
                 union_of(&acc, x, |v1, v2| v1 + v2)
@@ -132,16 +132,26 @@ impl Agent {
             .map(|(k, v)| (k, v / (values_to_average.len() as f32)))
             .collect();
 
-        // Take car / bike ownership into account
+        // Take car / bike ownership & congestion into account
         let ownership_modifier = hashmap! {
             TransportMode::Car => if self.owns_car {1.0f32} else {0.0f32},
             TransportMode::Cycle => if self.owns_bike {1.0f32} else {0.0f32},
         };
 
-        average = union_of(&average, &ownership_modifier, |v1, v2| v1 * v2);
+        let congestion = &self.neighbourhood.congestion_modifier.borrow();
+
+        let values_to_multiply: Vec<&HashMap<TransportMode, f32>> =
+            vec![&average, &ownership_modifier, congestion];
+
+
+        let intermediate_budget: HashMap<TransportMode, f32> = values_to_multiply
+            .iter()
+            .fold(HashMap::new(), |acc, x|
+                union_of(&acc, x, |v1, v2| v1 * v2)
+            );
 
         // Find the key-value-pair in average with the highest value, and store the value
-        let max: f32 = *average
+        let max: f32 = *intermediate_budget
             .iter()
             .max_by(|v1, v2| v1.1.partial_cmp(&v2.1).unwrap_or(cmp::Ordering::Equal))
             .unwrap()
@@ -149,7 +159,7 @@ impl Agent {
 
         // Make it so the the max mode has a budget of 1, therefore at least one mode is always possible
         // Return the result
-        average
+        intermediate_budget
             .into_iter()
             .map(|(k, v)| (k, v / max))
             .collect()

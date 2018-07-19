@@ -26,24 +26,44 @@ neighbourhoods:
       Walk: 0.800000011920929
       Car: 0.8999999761581421
       PublicTransport: 0.8999999761581421
+    capacity:
+      Car: 3600
+      Cycle: 150000
+      Walk: 150000
+      PublicTransport: 3000
   - id: "1"
     supportiveness:
       Cycle: 0.699999988079071
       Walk: 0.800000011920929
       Car: 0.5
       PublicTransport: 1.0
+    capacity:
+      Car: 2000
+      Cycle: 150000
+      Walk: 150000
+      PublicTransport: 4000
   - id: "2"
     supportiveness:
       Walk: 0.6000000238418579
       PublicTransport: 0.5
       Cycle: 0.800000011920929
       Car: 0.699999988079071
+    capacity:
+      Car: 2800
+      Cycle: 150000
+      Walk: 150000
+      PublicTransport: 2000
   - id: "3"
     supportiveness:
       PublicTransport: 0.8999999761581421
       Cycle: 0.8999999761581421
       Car: 0.20000000298023225
       Walk: 0.8999999761581421
+    capacity:
+      Car: 800
+      Cycle: 150000
+      Walk: 150000
+      PublicTransport: 3600
 number_of_bikes: 10000
 number_of_cars: 5000
 intervention:

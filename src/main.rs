@@ -20,6 +20,7 @@ mod intervention;
 mod social_network;
 mod statistics;
 mod gaussian;
+mod debug;
 
 use std::fs::File;
 use std::collections::HashMap;
