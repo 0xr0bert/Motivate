@@ -298,9 +298,9 @@ impl Agent {
         self.current_mode = match maximum {
             Some((mode, _)) => mode,
             None => {
-                *budget
+                *cost
                     .iter()
-                    .max_by(|v1, v2| v1.1.partial_cmp(&v2.1).unwrap_or(cmp::Ordering::Equal))
+                    .min_by_key(|(_, v)| *v)
                     .unwrap()
                     .0
             }
