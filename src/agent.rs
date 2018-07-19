@@ -78,8 +78,8 @@ pub struct Agent {
 impl Agent {
     /// Calculate the mode budget for the agent  
     /// Will also update the norm
-    /// * Returns: the mode budget, a map from TransportMode to values
-    fn calculate_mode_budget(&mut self) -> HashMap<TransportMode, f32> {
+    /// * Returns: the mode budget, a map from TransportMode to rank
+    fn calculate_mode_budget(&mut self) -> HashMap<TransportMode, u32> {
         // This is the percentage of people in the social network who take a given TransportMode,
         // Weighted by social connectivity
         let social_vals =
@@ -150,26 +150,36 @@ impl Agent {
                 union_of(&acc, x, |v1, v2| v1 * v2)
             );
 
-        // Find the key-value-pair in average with the highest value, and store the value
-        let max: f32 = *intermediate_budget
-            .iter()
-            .max_by(|v1, v2| v1.1.partial_cmp(&v2.1).unwrap_or(cmp::Ordering::Equal))
-            .unwrap()
-            .1;
-
-        // Make it so the the max mode has a budget of 1, therefore at least one mode is always possible
-        // Return the result
-        intermediate_budget
+        let budget_ordered: Vec<(TransportMode, f32)> = intermediate_budget
             .into_iter()
-            .map(|(k, v)| (k, v / max))
+            .sorted_by(|a, b| a.1.partial_cmp(&b.1).unwrap());
+
+        budget_ordered
+            .into_iter()
+            .enumerate()
+            .map(|(i, (mode, _))| (mode, i as u32))
             .collect()
+
+        // // Find the key-value-pair in average with the highest value, and store the value
+        // let max: f32 = *intermediate_budget
+        //     .iter()
+        //     .max_by(|v1, v2| v1.1.partial_cmp(&v2.1).unwrap_or(cmp::Ordering::Equal))
+        //     .unwrap()
+        //     .1;
+
+        // // Make it so the the max mode has a budget of 1, therefore at least one mode is always possible
+        // // Return the result
+        // intermediate_budget
+        //     .into_iter()
+        //     .map(|(k, v)| (k, v / max))
+        //     .collect()
     }
 
     /// Calculate the cost of travel
     /// * weather: The current weather
     /// * change_in_weather: true if there has been a change in the weather, false otherwise
-    /// * Returns: A Map from transport mode to its cost
-    fn calculate_cost(&self, weather: &Weather, change_in_weather: bool) -> HashMap<TransportMode, f32> {
+    /// * Returns: A Map from transport mode to its cost ranking
+    fn calculate_cost(&self, weather: &Weather, change_in_weather: bool) -> HashMap<TransportMode, u32> {
         // Take the supportiveness for each mode, away from 1, so a lower supportiveness = higher cost
         let neighbourhood_vals: HashMap<TransportMode, f32> = self.neighbourhood
             .supportiveness
@@ -219,13 +229,23 @@ impl Agent {
                 .iter()
                 .fold(HashMap::new(), |acc, x| union_of(&acc, x, |v1, v2| v1 * v2));
         }
+
+        let cost_ordered: Vec<(TransportMode, f32)> = average
+            .into_iter()
+            .sorted_by(|a, b| a.1.partial_cmp(&b.1).unwrap());
+
+        cost_ordered
+            .into_iter()
+            .enumerate()
+            .map(|(i, (mode, _))| (mode, i as u32))
+            .collect()
         
 
-        // If the cost is > 1, make the cost 1?
-        average
-            .into_iter()
-            .map(|(k, v)| (k, if v <= 1.0 {v} else {1.0}))
-            .collect()
+        // // If the cost is > 1, make the cost 1?
+        // average
+        //     .into_iter()
+        //     .map(|(k, v)| (k, if v <= 1.0 {v} else {1.0}))
+        //     .collect()
     }
 
     /// Updates the habit, should be called at the start of each day,
@@ -259,29 +279,32 @@ impl Agent {
         // Get the budget and cost
         let budget = self.calculate_mode_budget();
         let cost = self.calculate_cost(weather, change_in_weather);
-        
-        if (*budget.get(&TransportMode::Car).unwrap() != 0.0f32 && !self.owns_car) ||
-            (*budget.get(&TransportMode::Cycle).unwrap() != 0.0f32 && !self.owns_bike) {
-                println!("Bad Unexpected things have occured");
-        };
-
         // Filter out values where the budget is not greater than or equal to the cost
         // Calculate the difference between the budget and the cost
         // Get the maximum key-value pair (by value)
         // Set the current_mode equal to the key
-        budget
+        let maximum: Option<(TransportMode, u32)> = budget
             .iter()
             .filter_map(|(&k, &v)| {
-                let cost_val: f32 = *cost.get(&k).unwrap_or(&99999999.0f32);
+                let cost_val: u32 = *cost.get(&k).unwrap_or(&10000);
                 if v >= cost_val {
                     Some((k, v - cost_val))
                 } else {
                     None
                 }
             })
-            .max_by(|v1, v2| v1.1.partial_cmp(&v2.1).unwrap_or(cmp::Ordering::Equal))
-            .unwrap()
-            .0;
+            .max_by(|v1, v2| v1.1.partial_cmp(&v2.1).unwrap_or(cmp::Ordering::Equal));
+
+        self.current_mode = match maximum {
+            Some((mode, _)) => mode,
+            None => {
+                *budget
+                    .iter()
+                    .max_by(|v1, v2| v1.1.partial_cmp(&v2.1).unwrap_or(cmp::Ordering::Equal))
+                    .unwrap()
+                    .0
+            }
+        }
     }
 }
 
