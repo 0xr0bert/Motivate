@@ -86,13 +86,6 @@ pub fn count_active_mode_by_subculture (agents: &[Rc<RefCell<Agent>>]) -> HashMa
 /// * neighbourhoods: The neighbourhoods to count from
 /// * Returns: A Map: Neighbourhood -> The number of agent's who's current mode is Walk or Cycle 
 pub fn count_active_mode_by_neighbourhood (neighbourhoods: &[Rc<Neighbourhood>]) -> HashMap<Rc<Neighbourhood>, usize> {
-    // agents
-    //     .iter()
-    //     .map(|agent| (Rc::clone(&agent.borrow().neighbourhood), Rc::clone(agent)))
-    //     .into_group_map()
-    //     .into_iter()
-    //     .map(|(neighbourhood, grouped_agents)| (neighbourhood, count_active_mode(&grouped_agents)))
-    //     .collect()
     neighbourhoods
         .iter()
         .map(|neighbourhood| (Rc::clone(neighbourhood), count_active_mode(&neighbourhood.residents.borrow())))

@@ -19,7 +19,7 @@ pub struct Neighbourhood {
     pub capacity: RefCell<HashMap<TransportMode, u32>>,
 
     /// The calculated congestion modifier
-    #[serde(default = "default_congestion_modifier")]
+    #[serde(skip, default = "default_congestion_modifier")]
     pub congestion_modifier: RefCell<HashMap<TransportMode, f32>>,
 
     /// The residents who live in this neighbourhood  
