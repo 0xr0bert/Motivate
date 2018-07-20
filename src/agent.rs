@@ -150,11 +150,11 @@ impl Agent {
                 union_of(&acc, x, |v1, v2| v1 * v2)
             );
 
-        let budget_ordered: Vec<(TransportMode, f32)> = intermediate_budget
+        let budget_ordered_reverse: Vec<(TransportMode, f32)> = intermediate_budget
             .into_iter()
-            .sorted_by(|a, b| a.1.partial_cmp(&b.1).unwrap());
+            .sorted_by(|a, b| b.1.partial_cmp(&a.1).unwrap());
 
-        budget_ordered
+        budget_ordered_reverse
             .into_iter()
             .enumerate()
             .map(|(i, (mode, _))| (mode, i as u32))
@@ -279,31 +279,37 @@ impl Agent {
         // Get the budget and cost
         let budget = self.calculate_mode_budget();
         let cost = self.calculate_cost(weather, change_in_weather);
-        // Filter out values where the budget is not greater than or equal to the cost
-        // Calculate the difference between the budget and the cost
-        // Get the maximum key-value pair (by value)
-        // Set the current_mode equal to the key
-        let maximum: Option<(TransportMode, u32)> = budget
-            .iter()
-            .filter_map(|(&k, &v)| {
-                let cost_val: u32 = *cost.get(&k).unwrap_or(&10000);
-                if v >= cost_val {
-                    Some((k, v - cost_val))
-                } else {
-                    None
-                }
-            })
-            .max_by(|v1, v2| v1.1.partial_cmp(&v2.1).unwrap_or(cmp::Ordering::Equal));
+        // Add them
+        let sum = union_of(&budget, &cost, |v1, v2| v1 + v2);
+        // Swap the key (transport mode) and value (sum), and group them
+        // Sum -> Vec<Keys>
+        let sum_value_to_key = sum
+            .into_iter()
+            .map(|(k, v)| (v, k))
+            .into_group_map();
 
-        self.current_mode = match maximum {
-            Some((mode, _)) => mode,
-            None => {
-                *cost
-                    .iter()
-                    .min_by_key(|(_, v)| *v)
-                    .unwrap()
-                    .0
-            }
+        // Sort them by sum
+        let sum_value_to_key_sorted = sum_value_to_key
+            .into_iter()
+            .sorted_by(|v1, v2| v1.0.cmp(&v2.0));
+
+        // Get the TransportModes with the lowest sum
+        let minimum_values: &[TransportMode] = &sum_value_to_key_sorted
+            .first()
+            .unwrap()
+            .1;
+
+        self.current_mode = if minimum_values.len() == 1 {
+            *minimum_values.first().unwrap()
+        } else {
+            // Get the one with the lowest numerical budget (i.e. the highest budget)
+            *minimum_values
+                .into_iter()
+                .map(|mode| (mode, budget.get(&mode).unwrap()))
+                .sorted_by(|v1, v2| v1.1.cmp(&v2.1))
+                .first()
+                .unwrap()
+                .0
         }
     }
 }
