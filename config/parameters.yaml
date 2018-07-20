@@ -5,8 +5,8 @@ number_of_simulations: 6
 social_connectivity: 0.7
 subculture_connectivity: 0.5
 neighbourhood_connectivity: 0.3
-number_of_social_network_links: 10
-number_of_neighbour_links: 10
+number_of_social_network_links: 5
+number_of_neighbour_links: 5
 days_in_habit_average: 5
 distributions:
   - 
