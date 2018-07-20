@@ -1,5 +1,5 @@
 ---
-id: intervention A
+id: intervention B
 subcultures:
   - id: Subculture A
     desirability:
@@ -71,4 +71,4 @@ intervention:
   neighbourhood_changes: []
   subculture_changes: []
   change_in_number_of_bikes: 10000
-  change_in_number_of_cars: -100
+  change_in_number_of_cars: 0
