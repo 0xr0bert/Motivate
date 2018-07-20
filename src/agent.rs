@@ -192,16 +192,7 @@ impl Agent {
         let commute_cost = self.commute_length.cost();
 
         // Average commute_cost and neighbourhood_vals
-        let values_to_average =
-            vec!(&commute_cost, &neighbourhood_vals);
-
-        let mut average: HashMap<TransportMode, f32> = values_to_average
-            .iter()
-            .fold(HashMap::new(), |acc, x| intersection_of(&acc, x, |v1, v2| v1 + v2))
-            .iter()
-            .map(|(&k, v)| (k, v / (values_to_average.len()) as f32))
-            .collect();
-
+        let mut average: HashMap<TransportMode, f32> = intersection_of(&commute_cost, &neighbourhood_vals, |v1, v2| (v1 + v2) / 2.0);
         // If the weather is bad this has an impact on the cost
         if weather == &Weather::Bad {
             // If the weather was bad the day previous, and you took an active mode, this strengthens
@@ -218,16 +209,14 @@ impl Agent {
 
             // Calculate the weather modifier for Cycling and Walking
             let weather_modifier = hashmap!{
+                TransportMode::PublicTransport => 1.0f32,
+                TransportMode::Car => 1.0f32,
                 TransportMode::Cycle => 1.0f32 + self.weather_sensitivity + resolve,
                 TransportMode::Walk => 1.0f32 + self.weather_sensitivity + resolve
             };
 
             // Multiply the average by the weather modifier
-            let values_to_multiply = vec![average.clone(), weather_modifier];
-
-            average = values_to_multiply
-                .iter()
-                .fold(HashMap::new(), |acc, x| intersection_of(&acc, x, |v1, v2| v1 * v2));
+            average = intersection_of(&average.clone(), &weather_modifier, |v1, v2| v1 * v2)
         }
 
         let cost_ordered: Vec<(TransportMode, f32)> = average
@@ -280,7 +269,7 @@ impl Agent {
         let budget = self.calculate_mode_budget();
         let cost = self.calculate_cost(weather, change_in_weather);
         // Add them
-        let sum = union_of(&budget, &cost, |v1, v2| v1 + v2);
+        let sum = intersection_of(&budget, &cost, |v1, v2| v1 + v2);
         // Swap the key (transport mode) and value (sum), and group them
         // Sum -> Vec<Keys>
         let sum_value_to_key = sum
@@ -291,7 +280,7 @@ impl Agent {
         // Sort them by sum
         let sum_value_to_key_sorted = sum_value_to_key
             .into_iter()
-            .sorted_by(|v1, v2| v1.0.cmp(&v2.0));
+            .sorted_by_key(|v| v.0);
 
         // Get the TransportModes with the lowest sum
         let minimum_values: &[TransportMode] = &sum_value_to_key_sorted
@@ -306,7 +295,7 @@ impl Agent {
             *minimum_values
                 .into_iter()
                 .map(|mode| (mode, budget.get(&mode).unwrap()))
-                .sorted_by(|v1, v2| v1.1.cmp(&v2.1))
+                .sorted_by_key(|v| v.1)
                 .first()
                 .unwrap()
                 .0
