@@ -8,7 +8,7 @@ use transport_mode::TransportMode;
 use journey_type::JourneyType;
 use neighbourhood::Neighbourhood;
 use subculture::Subculture;
-use hashmap_union::union_of;
+use hashmap_union::{union_of, intersection_of};
 
 /// The agent in the model
 #[derive(PartialEq)]
@@ -197,7 +197,7 @@ impl Agent {
 
         let mut average: HashMap<TransportMode, f32> = values_to_average
             .iter()
-            .fold(HashMap::new(), |acc, x| union_of(&acc, x, |v1, v2| v1 + v2))
+            .fold(HashMap::new(), |acc, x| intersection_of(&acc, x, |v1, v2| v1 + v2))
             .iter()
             .map(|(&k, v)| (k, v / (values_to_average.len()) as f32))
             .collect();
@@ -227,7 +227,7 @@ impl Agent {
 
             average = values_to_multiply
                 .iter()
-                .fold(HashMap::new(), |acc, x| union_of(&acc, x, |v1, v2| v1 * v2));
+                .fold(HashMap::new(), |acc, x| intersection_of(&acc, x, |v1, v2| v1 * v2));
         }
 
         let cost_ordered: Vec<(TransportMode, f32)> = average
