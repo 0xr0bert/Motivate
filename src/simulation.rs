@@ -288,7 +288,7 @@ fn create_unlinked_agent(scenario: &Scenario,
     let neighbourhood = choose_neighbourhood(scenario);
 
     // Weather sensitivity is currently fixed
-    let weather_sensitivity = rand::random::<f32>();
+    let weather_sensitivity = 0.9f32;
     // TODO: Should consistency be used
     let consistency = 1.0f32;
 
