@@ -62,7 +62,7 @@ pub fn run(id: String,
     let scenario = Scenario::from_file(scenario_file);
 
     // Create the agents
-    let mut residents: Vec<Rc<RefCell<Agent>>> = set_up(
+    let mut residents = set_up(
         &scenario, social_connectivity, subculture_connectivity,
         neighbourhood_connectivity, days_in_habit_average,
         number_of_neighbour_links, number_of_people, 
@@ -164,10 +164,10 @@ fn set_up(scenario: &Scenario,
           distributions: Vec<(f64, f64, f64)>,
           network: HashMap<u32, Vec<u32>>) -> Vec<Rc<RefCell<Agent>>> {
     // Create an empty vec to store agents
-    let mut residents: Vec<Rc<RefCell<Agent>>> = Vec::new();
+    let mut residents = Vec::new();
     // Create self.number_of_people unlinked agents
     for _ in 0..number_of_people {
-        let agent: Agent = create_unlinked_agent(scenario, social_connectivity,
+        let agent = create_unlinked_agent(scenario, social_connectivity,
             subculture_connectivity, neighbourhood_connectivity, days_in_habit_average);
 
         let rc_agent = Rc::new(RefCell::new(agent));
@@ -397,9 +397,7 @@ fn choose_initial_norm_and_habit(subculture: &Rc<Subculture>,
         .map(|(&k, v)| (k, 1.0f32 - v))
         .collect();
 
-    let values_to_average: Vec<&HashMap<TransportMode, f32>> =
-        vec![&neighbourhood_vals,
-             &commute_length_cost];
+    let values_to_average = vec![&neighbourhood_vals, &commute_length_cost];
 
     let initial_cost: HashMap<TransportMode, f32> = values_to_average
         .iter()

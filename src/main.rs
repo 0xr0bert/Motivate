@@ -61,7 +61,7 @@ fn main() {
         }
     }
 
-    let weather_transition_matrix: HashMap<Weather, HashMap<Weather, f64>> = hashmap! {
+    let weather_transition_matrix = hashmap! {
         Weather::Good => hashmap! {
             Weather::Good => 0.886,
             Weather::Bad => 0.114
@@ -82,7 +82,7 @@ fn main() {
         .par_iter()
         .for_each(|id| {
             // Get the network number and load the network
-            let network_number: String = id.to_string();
+            let network_number = id.to_string();
             let file = File::open(format!("config/networks/{}.yaml", network_number))
                 .expect("File cannot be opened");
 
@@ -199,7 +199,6 @@ impl Parameters {
     /// * file: The YAML file storing the serialized parameters
     /// * Returns; The created parameters
     pub fn from_file(mut file: File) -> Self {
-        ;
         info!("Loading parameters from file");
         let mut file_contents = String::new();
 
