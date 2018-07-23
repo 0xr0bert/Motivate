@@ -25,7 +25,6 @@ use agent::Agent;
 use statistics;
 use hashmap_union::union_of;
 use social_network;
-use std::cmp;
 use gaussian;
 
 /// Run the simulation
@@ -237,10 +236,6 @@ fn set_up(scenario: &Scenario,
     for agent in residents.iter() {
         let mut borrowed_agent = agent.borrow_mut();
         let new_mode = choose_initial_norm_and_habit(
-            &borrowed_agent.subculture, 
-            borrowed_agent.social_connectivity, 
-            borrowed_agent.commute_length, 
-            &borrowed_agent.neighbourhood, 
             borrowed_agent.owns_car, 
             borrowed_agent.owns_bike);
         
@@ -345,86 +340,48 @@ fn choose_subculture(scenario: &Scenario) -> Rc<Subculture> {
 }
 
 /// Choose an initial norm and habit
-/// * subculture: The subculture of the agent
-/// * subculture_connectivity: How connected the agent is to the subculture
-/// * commute_length: The distance of the agent's commute
-/// * neighbourhood: The neighbourhood of the agent
+/// * owns_car: whether the agent owns a car
+/// * owns_bike: whether the agent owns a bike
 /// * Returns: The chosen transport mode
-fn choose_initial_norm_and_habit(subculture: &Rc<Subculture>,
-                                 subculture_connectivity: f32,
-                                 commute_length: JourneyType,
-                                 neighbourhood: &Rc<Neighbourhood>,
-                                 owns_car: bool,
-                                 owns_bike: bool
-) -> TransportMode {
-    let subculture_weight = subculture_connectivity;
-    let mut initial_budget: HashMap<TransportMode, f32> = subculture
-        .desirability
-        .borrow()
-        .iter()
-        .map(|(&k, v)|(k, v * subculture_weight))
-        .collect();
-
-    // Find the key-value-pair in initial_budget with the highest value, and store the value
-    let max: f32 = *initial_budget
-        .iter()
-        .max_by(|v1, v2| v1.1.partial_cmp(&v2.1).unwrap_or(cmp::Ordering::Equal))
-        .unwrap()
-        .1;
-
-    // Make it so the the max mode has a budget of 1, therefore at least one mode is always possible
-    initial_budget = initial_budget
-        .into_iter()
-        .map(|(k, v)| (k, v / max))
-        .collect();
-
-    // Take car / bike ownership into account
-    let ownership_modifier = hashmap! {
-        TransportMode::Car => if owns_car {1.0f32} else {0.0f32},
-        TransportMode::Cycle => if owns_bike {1.0f32} else {0.0f32},
-    };
-
-    initial_budget = union_of(&initial_budget, &ownership_modifier, |v1, v2| v1 * v2);
-
-
-    let commute_length_cost = commute_length.cost();
-
-    // Take the supportiveness for each mode, away from 1, so a lower supportiveness = higher cost
-    let neighbourhood_vals: HashMap<TransportMode, f32> = neighbourhood
-        .supportiveness
-        .borrow()
-        .iter()
-        .map(|(&k, v)| (k, 1.0f32 - v))
-        .collect();
-
-    let values_to_average = vec![&neighbourhood_vals, &commute_length_cost];
-
-    let initial_cost: HashMap<TransportMode, f32> = values_to_average
-        .iter()
-        .fold(HashMap::new(), |acc, x|
-            union_of(&acc, x, |v1, v2| v1 + v2)
-        )
-        .into_iter()
-        .map(|(k, v)| (k, v / (values_to_average.len() as f32)))
-        .collect();
-
-    // Filter out values where the budget is not greater than or equal to the cost
-    // Calculate the difference between the budget and the cost
-    // Get the maximum key-value pair (by value)
-    // Set the current_mode equal to the key
-    initial_budget
-        .iter()
-        .filter_map(|(&k, &v)| {
-            let cost_val: f32 = *initial_cost.get(&k).unwrap_or(&9999.0f32);
-            if v >= cost_val {
-                Some((k, v - cost_val))
-            } else {
-                None
-            }
-        })
-        .fold((TransportMode::Walk, -0.1),
-              |(k0, v0): (TransportMode, f32), (k1, v1): (TransportMode, f32)| if v1 > v0 { (k1, v1) } else { (k0, v0) })
-        .0
+fn choose_initial_norm_and_habit(owns_car: bool, owns_bike: bool) -> TransportMode {
+    if owns_car && owns_bike {
+        let randfloat = rand::random::<f64>();
+        if randfloat < 0.4 {
+            TransportMode::Car
+        } else if randfloat < 0.7 {
+            TransportMode::Cycle
+        } else if randfloat < 0.85 {
+            TransportMode::Walk
+        } else {
+            TransportMode::PublicTransport
+        }
+    } else if owns_car {
+        let randfloat = rand::random::<f64>();
+        if randfloat < 0.57 {
+            TransportMode::Car
+        }
+        else if randfloat < 0.79 {
+            TransportMode::Walk
+        } else {
+            TransportMode::PublicTransport
+        }
+    } else if owns_bike {
+        let randfloat = rand::random::<f64>();
+        if randfloat < 0.5 {
+            TransportMode::Cycle
+        } else if randfloat < 0.75 {
+            TransportMode::Walk
+        } else {
+            TransportMode::PublicTransport
+        }
+    } else {
+        let randfloat = rand::random::<f64>();
+        if randfloat < 0.5 {
+            TransportMode::Walk
+        } else {
+            TransportMode::PublicTransport
+        }
+    }
 }
 
 /// Link agents to a social network
