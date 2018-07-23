@@ -532,11 +532,33 @@ fn intervene(scenario: &Scenario, agents: &[Rc<RefCell<Agent>>]) {
                     &change.increase_in_supportiveness, 
                     |v1, v2| v1 + v2);
 
-                neighbourhood_to_change
-                    .supportiveness
-                    .borrow_mut()
-                    .iter_mut()
-                    .for_each(|(k, v)| *v = *new_supportiveness.get(&k).unwrap());
+                neighbourhood_to_change.supportiveness.replace(new_supportiveness);
+
+                // Convert capacity for an u32 to i64 for use later (i64 has a higher max value than u32, which has a higher max than i32)
+                let signed_capacity: HashMap<TransportMode, i64> = neighbourhood_to_change
+                    .capacity
+                    .borrow()
+                    .iter()
+                    .map(|(&k, &v)| (k, v as i64))
+                    .collect();
+        
+                // Calculate the new capacity, and convert to u32
+                let new_capacity: HashMap<TransportMode, u32> = union_of(
+                        &signed_capacity, &change.increase_in_capacity, |v1, v2| v1 + v2
+                    )
+                    .into_iter()
+                    .map(|(k, v)| {
+                        if v < 0 {
+                            (k, 0)
+                        } else if v > u32::max_value() as i64 {
+                            (k, u32::max_value())
+                        } else {
+                            (k, v as u32)
+                        }
+                    })
+                    .collect();
+
+                neighbourhood_to_change.capacity.replace(new_capacity);
             }
         );
 
