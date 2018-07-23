@@ -244,14 +244,11 @@ number_of_bikes: 50000
 number_of_cars: 25000
 intervention:
   day: 912
-  neighbourhood_changes: 
-    - id: "18"
-      increase_in_supportiveness:
-        Cycle: 0.8
-    - id: "15"
-      increase_in_supportiveness:
-        Cycle: 0.6
+  neighbourhood_changes: []
+  subculture_changes: 
+    - id: Subculture B
+      increase_in_desirability:
+        Car: -0.4
         PublicTransport: -0.2
-  subculture_changes: []
   change_in_number_of_bikes: 0
   change_in_number_of_cars: 0
