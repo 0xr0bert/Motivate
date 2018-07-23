@@ -53,6 +53,17 @@ intervention: <- The intervention that should occur
         Car: -0.1
         Cycle: 0.1
         < fields with no change are not required >
+      increase_in_capacity: <- Be careful this does not make the capacity < 0
+        Car: -4000
+        PublicTransport: -100
+      < if there is no increase_in_supportiveness or increase_in_capacity the respective field can be left out e.g. >
+    - id: "1"
+      increase_in_capacity:
+        Car: -100
+    - id: "2"
+      increase_in_supportiveness:
+        Walk: 0.4
+        Cycle: 0.3
     < other changes to the neighbourhood can be added in the same way >
   subculture_changes: 
     - id: Subculture A <- The ID of the Subculture to change
