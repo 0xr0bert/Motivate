@@ -12,13 +12,21 @@ use subculture::Subculture;
 use hashmap_union::{union_of, intersection_of};
 
 /// The agent in the model
-#[derive(PartialEq)]
+#[derive(PartialEq, Serialize, Deserialize)]
 pub struct Agent {
     /// The demographic agent of the subculture
+    #[serde(skip)]
     pub subculture: Rc<Subculture>,
 
+    /// The ID of the subculture
+    pub subculture_id: String,
+
     /// The neighbourhood the agent lives in
+    #[serde(skip)]
     pub neighbourhood: Rc<Neighbourhood>,
+
+    /// The ID of the neighbourhood
+    pub neighbourhood_id: String,
 
     /// The distance of the agent's commute (categorical).  
     /// This may become deprecated, once commute_length_continuous
@@ -70,9 +78,11 @@ pub struct Agent {
     pub owns_car: bool,
 
     /// The friends of the agent
+    #[serde(skip)]
     pub social_network: Vec<Rc<RefCell<Agent>>>,
 
     /// Neighbours of the agent
+    #[serde(skip)]
     pub neighbours: Vec<Rc<RefCell<Agent>>>
 }
 

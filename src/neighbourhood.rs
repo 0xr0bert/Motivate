@@ -40,6 +40,18 @@ fn default_congestion_modifier() -> RefCell<HashMap<TransportMode, f32>> {
     })
 }
 
+impl Default for Neighbourhood {
+    fn default() -> Self {
+        Neighbourhood {
+            id: "placeholder".to_string(),
+            supportiveness: RefCell::new(HashMap::new()),
+            capacity: RefCell::new(HashMap::new()),
+            congestion_modifier: RefCell::new(HashMap::new()),
+            residents: RefCell::new(Vec::new())
+        }
+    }
+}
+
 impl Neighbourhood {
     /// This updates the congestion modifier
     pub fn update_congestion_modifier(&self) {

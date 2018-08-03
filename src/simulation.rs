@@ -294,7 +294,9 @@ fn create_unlinked_agent(scenario: &Scenario,
 
     // Create and return the agent
     Agent {
+        subculture_id: subculture.id.clone(),
         subculture,
+        neighbourhood_id: neighbourhood.id.clone(),
         neighbourhood,
         commute_length: JourneyType::LocalCommute,
         commute_length_continuous: 0.0,
