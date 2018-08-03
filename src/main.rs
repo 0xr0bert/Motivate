@@ -21,6 +21,7 @@ mod social_network;
 mod statistics;
 mod gaussian;
 mod debug;
+mod agent_generation;
 
 use std::fs::File;
 use std::collections::HashMap;
