@@ -44,8 +44,10 @@ pub fn load_unlinked_agents_from_file(mut file: File, subcultures: &[Rc<Subcultu
             .collect();
 
         for agent in residents.iter_mut() {
-            agent.borrow_mut().subculture = Rc::clone(subcultures_kvp.get(&agent.borrow().subculture_id).expect("Subculture not found"));
-            agent.borrow_mut().neighbourhood = Rc::clone(neighbourhoods_kvp.get(&agent.borrow().neighbourhood_id).expect("Agent not found"));
+            let subculture = Rc::clone(subcultures_kvp.get(&agent.borrow().subculture_id).expect("Subculture not found"));
+            agent.borrow_mut().subculture = subculture;
+            let neighbourhood = Rc::clone(neighbourhoods_kvp.get(&agent.borrow().neighbourhood_id).expect("Agent not found"));
+            agent.borrow_mut().neighbourhood = neighbourhood;
         }
 
         residents
