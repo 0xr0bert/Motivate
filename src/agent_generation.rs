@@ -46,3 +46,8 @@ pub fn load_agents_from_file(mut file: File, subcultures: &[Rc<Subculture>], nei
 
         residents
 }
+
+fn save_agents(mut file: File, agents: Vec<Rc<RefCell<Agent>>>) {
+    let agents_string = serde_yaml::to_string(&agents).unwrap();
+    file.write_all(agents_string.as_bytes()).unwrap();
+}
