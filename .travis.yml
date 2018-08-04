@@ -2,3 +2,5 @@ language: rust
 rust:
   - stable
 os: osx
+script:
+  - cargo build --verbose --release
