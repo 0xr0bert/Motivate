@@ -1,15 +1,14 @@
 language: rust
 rust:
-  - stable
+- stable
 os: osx
 script:
-  - cargo build --verbose --release
-  - zip -r mac.zip target/release
+- cargo build --verbose --release
+- zip -r mac.zip target/release
 deploy:
   provider: releases
   api_key:
-    secure: "SEzadrkWI5iE4fzRbITjqOp6cb2kd5AkxSqEST2dWI+qtOegeWN29YCcVzQCZmDJpiilBERA6D46HCPyuiNstOJp539Fn4kCFqE6dOuJJreV40AIj7HDhq9VvV91xZX4O9RrslB8hGj+n9UqXQ2EwblXyZbcDyptLAniPRPMsROAfkgVBMBvulULnAQbBk5/KSHgUc6oqA3FqKHz9SxWw7ck92vcp1QTK/uy4ihD10NJLrqa6qSEDE7CALbc/W1Qeov6+mSmZTkCi66QzpsCP/oDHxHizVM9GktWlUMlWZnQfLP7vBIkB1/5WO+zfHVO0B83oiUnjBF7WZuSyzxr92D6T2zoBGF2CQPZc01B2cZPnfce5LiRM2qclb3BqWAajO1f2Rg1kYT6y7t25gez/Ze68Q6kfQOB9G5wZ+9wRZHMbHPh5j+EaQl0Cq1CTo3Uqrh3oOUj9GV5PH1/nhcgNJMDYQ2sQ9Ep4H0OxnQa/0UnfVQTNW1UVtx9hOj0ntmghyze/sm2VqdfS1oB6L12gMmuAiF3vbzG8d4qbeYvijxrwbgeDI38UgMviOZkbVMx9VwfVRlHmwtY2I5rAZvbthmfgLulD6q32C78ZrzJKZIZG5+uzneBDY9JDOaD+HrvV3lr/QzogcIDK8iEFXCoASFNwJd8kWv/fBpoM/+5Ymo="
-  file: 'mac.zip'
-  skip_cleanup: true
+    secure: r4enbvydJinkRDwgeYD2YJhl6bDR3QSd/NzJ/y9uO8iiqTj941cn2nUpxt76ictf3I9HNQdRG9P5A/Rw0iJPxFvd9JyzcH/PJIGxnuDP4Lm/GEEHuZsA4FS9bg8tMtx0+2P9au+X1TdG61AejViuzFFD7isQu61Ml8wZn8nT3QXqgn0JhwRy2knP6belz6snfkdzzKDdIuGGXY2YaHKkXrrX9umpB/Wk2oYCzxqJ0z3N5yJox7bScyF3BcOO5JYfJTApbjdJpikrlFvOkxRfVkX9w4Na9REDYlEq21UYBjfyK7pvwvlldvdqKgEQi7+5zuS8GvYLvMaKeYy7v3nlCr4KTFyPJy/KqLCu0kXHibopeEX9OouC5FbtxFHEgewP0xPXvo+heKvuDH56LVhCG+fdP1D2p2s5u96KyAoI1ezzuba+x/MQpVOoG2TfDmo/cB/1TRbXUrDyMwzjvGaMTlZg7meZNl9ax82FLGU9JMKIfbmWh2ux8zHxgZXLiTOaOWzKjingXbzzVsBRQDKXoE7sUAM37CgeIVimhx8m0HAkZOv/NIs2ifJ7HROKGt27k1A/7Quqavldm5Ak3fqtzLGV/XfGfdbq8fZGyGw8jbxlghLfvd1o4EjGwqpYwMaxUP9xhjDqZKfYQyF6cLEVajgW2iowSiPvS8KCFgmXleE=
+  file: mac.zip
   on:
     tags: true
