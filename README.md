@@ -1,4 +1,4 @@
-# Motivate
+# Motivate [![Build Status](https://travis-ci.com/ragreener1/Motivate.svg?branch=master)](https://travis-ci.com/ragreener1/Motivate)
 ## Setup
 Install rust using [rustup](https://rustup.rs)
 
