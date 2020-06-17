@@ -18,6 +18,7 @@ mod agent;
 mod simulation;
 mod intervention;
 mod social_network;
+mod statistics;
 mod gaussian;
 mod debug;
 mod agent_generation;

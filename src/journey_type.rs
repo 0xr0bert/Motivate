@@ -1,9 +1,8 @@
 use std::collections::HashMap;
-use std::fmt;
 use transport_mode::TransportMode;
 
 /// A categorical distance for commute
-#[derive(Eq, Hash, PartialEq, Copy, Clone, Serialize, Deserialize, Debug)]
+#[derive(Eq, Hash, PartialEq, Copy, Clone, Serialize, Deserialize)]
 pub enum JourneyType {
     LocalCommute,
     CityCommute,
@@ -33,11 +32,5 @@ impl JourneyType {
                 TransportMode::PublicTransport => 0.1f32
             }
         }
-    }
-}
-
-impl fmt::Display for JourneyType {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{:?}", self)
     }
 }
