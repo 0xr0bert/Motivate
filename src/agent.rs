@@ -90,7 +90,7 @@ impl Agent {
     /// Calculate the mode budget for the agent  
     /// Will also update the norm
     /// * Returns: the mode budget, a map from TransportMode to rank
-    fn calculate_mode_budget(&mut self) -> HashMap<TransportMode, u32> {
+    fn calculate_mode_budget(&mut self, day: u32) -> HashMap<TransportMode, u32> {
         // This is the percentage of people in the social network who take a given TransportMode,
         // Weighted by social connectivity
         let social_vals =
@@ -142,6 +142,11 @@ impl Agent {
             .collect();
 
         // Take car / bike ownership & congestion into account
+        // let ownership_modifier = hashmap! {
+        //     TransportMode::Car => if self.owns_car && day % 7 != 2 {1.0f32} else {0.0f32},
+        //     TransportMode::Cycle => if self.owns_bike {1.0f32} else {0.0f32},
+        // };
+
         let ownership_modifier = hashmap! {
             TransportMode::Car => if self.owns_car {1.0f32} else {0.0f32},
             TransportMode::Cycle => if self.owns_bike {1.0f32} else {0.0f32},
@@ -261,12 +266,23 @@ impl Agent {
     /// Choose a mode of travel
     /// * weather: The current weather
     /// * change_in_weather: true if there has been a change in the weather, false otherwise
-    pub fn choose(&mut self, weather: &Weather, change_in_weather: bool) {
+    pub fn choose(&mut self, weather: &Weather, change_in_weather: bool, day: u32) {
         // Get the budget and cost
-        let budget = self.calculate_mode_budget();
+        let budget = self.calculate_mode_budget(day);
         let cost = self.calculate_cost(weather, change_in_weather);
         // Add them
-        let sum = intersection_of(&budget, &cost, |v1, v2| v1 + v2);
+        let mut sum = intersection_of(&budget, &cost, |v1, v2| v1 + v2);
+        
+        // if (day > 365 && day % 7 == 2) || !self.owns_car {
+        //     sum.remove(&TransportMode::Car);
+        // }
+        if !self.owns_car {
+            sum.remove(&TransportMode::Car);
+        }
+
+        if !self.owns_bike {
+            sum.remove(&TransportMode::Cycle);
+        }
         // Swap the key (transport mode) and value (sum), and group them
         // Sum -> Vec<Keys>
         let sum_value_to_key = sum

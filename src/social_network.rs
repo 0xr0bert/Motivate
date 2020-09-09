@@ -1,6 +1,6 @@
 use rand::distributions;
 use rand::distributions::Distribution;
-use rand::{thread_rng};
+use rand::{Rng, SeedableRng, rngs::StdRng};
 use std::collections::HashMap;
 
 /// Generate a scale free network
@@ -12,6 +12,7 @@ use std::collections::HashMap;
 pub fn generate_social_network(min: u32, total_number: u32) -> HashMap<u32, Vec<u32>>{
     // Create a HashMap mapping ids, to the ids of their friends
     let mut network: HashMap<u32, Vec<u32>> = HashMap::new();
+    let mut rng = StdRng::from_seed([0; 32]);
 
     // For total_number ids
     for i in 0..total_number {
@@ -34,7 +35,7 @@ pub fn generate_social_network(min: u32, total_number: u32) -> HashMap<u32, Vec<
 
             // For min ids selected from the sample, link them together
             for _ in 0..min {
-                let id: u32 = weighted_choice.sample(&mut thread_rng());
+                let id: u32 = weighted_choice.sample(&mut rng);
                 network.get_mut(&id).unwrap().push(i);
                 i_friends.push(id);
             }

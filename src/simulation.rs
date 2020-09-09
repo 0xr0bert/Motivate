@@ -124,7 +124,7 @@ pub fn run(id: String,
 
             // For each resident, choose a travel mode
             for resident in residents.iter_mut() {
-                resident.borrow_mut().choose(&new_weather, weather != new_weather);
+                resident.borrow_mut().choose(&new_weather, weather != new_weather, day);
             }
 
             // Update the weather

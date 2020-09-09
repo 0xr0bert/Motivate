@@ -1,4 +1,5 @@
 use rand;
+use rand::{Rng, SeedableRng, rngs::StdRng};
 use std::collections::HashMap;
 
 /// The weather for a given day
@@ -20,10 +21,11 @@ impl Weather {
         chance_of_rain: f64,
         days: usize) -> Vec<Self> 
     {
+        let mut rng = StdRng::from_seed([0; 32]);
         // Create an empty weather pattern
         let mut pattern = Vec::with_capacity(days);
         // On day 0, calculate if their is rain
-        if rand::random::<f64>() > chance_of_rain {
+        if rng.gen::<f64>() > chance_of_rain {
             pattern.push(Weather::Good);
         } else {
             pattern.push(Weather::Bad);
@@ -36,7 +38,7 @@ impl Weather {
             // calculate a random float, if this is less
             // than that probability then the weather for day i
             // is good
-            if rand::random::<f64>() < 
+            if rng.gen::<f64>() < 
                 *transition_matrix.get(&pattern[i - 1]).unwrap()
                 .get(&Weather::Good).unwrap() {
                     pattern.push(Weather::Good);
